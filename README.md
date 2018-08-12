@@ -56,6 +56,19 @@ OSCdef(\trig, { |msg|
 ~setPlayhead.(60 * 60); // 1 hour in
 ```
 
+## Build instructions
+Make sure you have a copy of the SuperCollider source code, then run the following commands:
+```
+git clone https://github.com/esluyter/super-bufrd.git
+cd super-bufrd
+mkdir build
+cd build
+cmake -DSC_PATH=/path/to/sc3source/ ..
+cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+make
+```
+Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.
+
 ## TODO
 - Enforce size limit of 2139095040 samples
 - Support audio-rate trig and rate inputs to SuperPhasor.ar

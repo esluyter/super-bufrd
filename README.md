@@ -3,6 +3,8 @@
 
 To get around 32-bit floating point numbers' lack of precision, each position value is represented by two numbers, an integer value which is a 32-bit int recast as a float, and a decimal value which is a float between 0 and 1. These are internally added together to make a double.
 
+[Full spec / documentation of classes here](https://gist.github.com/esluyter/53597bed464d16fdb603c9db8405e3a9)
+
 ## Example usage using SuperPlayBuf pseudo-ugen
 ```
 // sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)

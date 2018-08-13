@@ -47,10 +47,10 @@ outDec[i] = pos - posInt; \
 outPlaying[i] = (playing == 0); \
 
 #define SP_INCREMENT_POS \
-if (playing == -1 && rate > 0) { \
+if (playing == -1 && (rate > 0 || start < pos)) { \
     playing = 0; \
 } \
-if (playing == 1 && rate < 0) { \
+if (playing == 1 && (rate < 0 || end > pos)) { \
     playing = 0; \
 } \
 if (playing == 0) { \

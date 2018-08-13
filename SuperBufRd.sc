@@ -50,6 +50,24 @@ SuperPlayBuf {
     }
 }
 
+SuperPlayBufDetails {
+    *ar { arg numChannels=1, bufnum=0, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=0, interpolation=0;
+        var phaseInt, phaseDec, playing;
+        startPos = startPos.asArray;
+        endPos = endPos ? [SuperBufFrames.kr(bufnum), 0];
+        endPos = endPos.asArray;
+        cuePos = cuePos.asArray;
+        rate = BufRateScale.kr(bufnum) * rate;
+        # phaseInt, phaseDec, playing = SuperPhasor.ar(
+            cueTrig, rate,
+            startPos[0], startPos[1],
+            endPos[0], endPos[1],
+            cuePos[0], cuePos[1],
+            loop);
+        ^[SuperBufRd.ar(numChannels, bufnum, phaseInt, phaseDec, 0, interpolation), [phaseInt, phaseDec], playing];
+    }
+}
+
 SuperIndex {
     var sampleNum, sampleRate;
 

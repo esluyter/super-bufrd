@@ -29,21 +29,24 @@ SuperBufRd : MultiOutUGen {
 	}
 }
 
+SuperBufFrames : BufInfoUGenBase {}
+
+
 SuperPlayBuf {
-    *ar { arg buffer, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=0, interpolation=0;
+    *ar { arg numChannels=1, bufnum=0, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=0, interpolation=0;
         var phaseInt, phaseDec, playing;
         startPos = startPos.asArray;
-        endPos = endPos ? SuperIndex(buffer.numFrames);
+        endPos = endPos ? [SuperBufFrames.kr(bufnum), 0];
         endPos = endPos.asArray;
         cuePos = cuePos.asArray;
-        rate = BufRateScale.kr(buffer) * rate;
+        rate = BufRateScale.kr(bufnum) * rate;
         # phaseInt, phaseDec, playing = SuperPhasor.ar(
             cueTrig, rate,
             startPos[0], startPos[1],
             endPos[0], endPos[1],
             cuePos[0], cuePos[1],
             loop);
-        ^SuperBufRd.ar(buffer.numChannels, buffer, phaseInt, phaseDec, 0, interpolation);
+        ^SuperBufRd.ar(numChannels, bufnum, phaseInt, phaseDec, 0, interpolation);
     }
 }
 

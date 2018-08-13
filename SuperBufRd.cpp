@@ -514,6 +514,56 @@ void SuperBufRd_next_1(SuperBufRd *unit, int inNumSamples)
 
 
 
+//////////////////////////////////////////////////////////////////
+// SUPERBUFFRAMES
+//////////////////////////////////////////////////////////////////
+
+#define CTOR_GET_BUF \
+	float fbufnum  = ZIN0(0); \
+	fbufnum = sc_max(0.f, fbufnum); \
+	uint32 bufnum = (int)fbufnum; \
+	World *world = unit->mWorld; \
+	SndBuf *buf; \
+	if (bufnum >= world->mNumSndBufs) { \
+		int localBufNum = bufnum - world->mNumSndBufs; \
+		Graph *parent = unit->mParent; \
+		if(localBufNum <= parent->localBufNum) { \
+			buf = parent->mLocalSndBufs + localBufNum; \
+		} else { \
+			bufnum = 0; \
+			buf = world->mSndBufs + bufnum; \
+		} \
+	} else { \
+		buf = world->mSndBufs + bufnum; \
+	}
+
+struct BufInfoUnit : public Unit
+{
+	float m_fbufnum;
+	SndBuf *m_buf;
+};
+
+void SuperBufFrames_next(BufInfoUnit *unit, int inNumSamples);
+void SuperBufFrames_Ctor(BufInfoUnit *unit, int inNumSamples);
+
+void SuperBufFrames_next(BufInfoUnit *unit, int inNumSamples)
+{
+	SIMPLE_GET_BUF_SHARED
+    int32 framesInt = (int32)buf->frames;
+    ZOUT0(0) = *reinterpret_cast<float*>(&framesInt);
+}
+
+void SuperBufFrames_Ctor(BufInfoUnit *unit, int inNumSamples)
+{
+	SETCALC(SuperBufFrames_next);
+	CTOR_GET_BUF
+	unit->m_fbufnum = fbufnum;
+	unit->m_buf = buf;
+    int32 framesInt = (int32)buf->frames;
+    ZOUT0(0) = *reinterpret_cast<float*>(&framesInt);
+}
+
+
 // the entry point is called by the host when the plug-in is loaded
 PluginLoad(SuperBufRdUGens)
 {
@@ -527,4 +577,9 @@ PluginLoad(SuperBufRdUGens)
     //registerUnit<SuperBufRd>(ft, "SuperBufRd");
 
     DefineSimpleUnit(SuperBufRd);
+
+#define DefineBufInfoUnit(name) \
+	(*ft->fDefineUnit)(#name, sizeof(BufInfoUnit), (UnitCtorFunc)&name##_Ctor, 0, 0);
+
+    DefineBufInfoUnit(SuperBufFrames);
 }

@@ -3,8 +3,6 @@
 
 To get around 32-bit floating point numbers' lack of precision, each position value is represented by two numbers, an integer value which is a 32-bit int recast as a float, and a decimal value which is a float between 0 and 1. These are internally added together to make a double.
 
-On the sclang side, you can recast an integer as a float to be understood by these UGens using `Float.from32Bits(integer_value)`, and you can recast a float coming back from these UGens using `integer_value = float_value.as32Bits`.
-
 ## Example usage
 ```
 // sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
@@ -56,5 +54,5 @@ Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile 
 
 ## TODO
 - Enforce size limit of 2139095040 samples
-- Support audio-rate trig and rate inputs to SuperPhasor.ar
+- Loop with crossfade
 - Probably much more....

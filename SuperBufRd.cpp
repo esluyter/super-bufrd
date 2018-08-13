@@ -1,9 +1,88 @@
-#define SUPERPHASOR_UPPER_BOUND 2139095040
-
 #include "SC_PlugIn.hpp"
 
 // InterfaceTable contains pointers to functions in the host (server).
 static InterfaceTable *ft;
+
+
+#define SP_UPPER_BOUND 2139095040
+
+#define SP_GET_INS_OUTS \
+float *outIntAsFloat = out(0); \
+float *outDec = out(1); \
+float *outPlaying = out(2); \
+float startIntAsFloat = in0(2); \
+float startDec = in0(3); \
+double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat)); \
+double startDecAsDouble = (double)startDec; \
+double start = startIntAsDouble + startDecAsDouble; \
+float endIntAsFloat = in0(4); \
+float endDec = in0(5); \
+double endIntAsDouble = (double)(*reinterpret_cast<int32*>(&endIntAsFloat)); \
+double endDecAsDouble = (double)endDec; \
+double end = endIntAsDouble + endDecAsDouble; \
+float resetIntAsFloat = in0(6); \
+float resetDec = in0(7); \
+const int loop = (int)in0(8); \
+float prevtrig = mPrevtrig; \
+double pos = mPos; \
+int playing = mPlaying; \
+
+#define SP_TEST_TRIG \
+if (prevtrig <= 0.f && trig > 0.f) { \
+    double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat)); \
+    double resetDecAsDouble = (double)resetDec; \
+    double reset = resetIntAsDouble + resetDecAsDouble; \
+    if (reset < start) { \
+        pos = start; \
+    } else { \
+        pos = reset; \
+    } \
+    playing = 0; \
+} \
+
+#define SP_WRITE_OUTS \
+int32 posInt = (int32)pos; \
+outIntAsFloat[i] = *reinterpret_cast<float*>(&posInt); \
+outDec[i] = pos - posInt; \
+outPlaying[i] = (playing == 0); \
+
+#define SP_INCREMENT_POS \
+if (playing == -1 && rate > 0) { \
+    playing = 0; \
+} \
+if (playing == 1 && rate < 0) { \
+    playing = 0; \
+} \
+if (playing == 0) { \
+    pos += rate; \
+} \
+if (pos >= end) { \
+    if (loop) { \
+        while (pos >= end) { \
+            pos = pos - end + start; \
+        } \
+        playing = 0; \
+    } else { \
+        pos = end; \
+        playing = 1; \
+    } \
+} \
+if (pos <= start) { \
+    if (loop) { \
+        while (pos < start) { \
+            pos = pos - start + end; \
+        } \
+        playing = 0; \
+    } else { \
+        pos = start; \
+        playing = -1; \
+    } \
+} \
+
+#define SP_STORE_STRUCT \
+mPrevtrig = trig; \
+mPos = pos; \
+mPlaying = playing; \
 
 
 //////////////////////////////////////////////////////////////////
@@ -38,7 +117,19 @@ public:
         mPrevtrig = in0(0);
         float startIntAsFloat = in0(2);
         float startDec = in0(3);
-        mPos = (double)(*reinterpret_cast<int32*>(&startIntAsFloat)) + startDec;
+        double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat));
+        double startDecAsDouble = (double)startDec;
+        double start = startIntAsDouble + startDecAsDouble;
+        float resetIntAsFloat = in0(6);
+        float resetDec = in0(7);
+        double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat));
+        double resetDecAsDouble = (double)resetDec;
+        double reset = resetIntAsDouble + resetDecAsDouble;
+        if (reset < start) {
+            mPos = start;
+        } else {
+            mPos = reset;
+        }
         mPlaying = 0;
 
         // 3. calculate one sample of output.
@@ -57,83 +148,20 @@ private:
     // calculation function for all control rate arguments
     void next_kk(int inNumSamples)
     {
-        // get the pointer to the output buffer
-        float *outInt = out(0);
-        float *outDec = out(1);
-        float *outPlaying = out(2);
+        SP_GET_INS_OUTS
 
         const float trig = in0(0);
         const float rate = in0(1);
-        float startIntAsFloat = in0(2);
-        float startDec = in0(3);
-        float endIntAsFloat = in0(4);
-        float endDec = in0(5);
-        float resetIntAsFloat = in0(6);
-        float resetDec = in0(7);
-        const int loop = (int)in0(8);
 
-        // get data from struct and store it in a
-        // local variable.
-        // The optimizer will cause them to be loaded it into a register.
-        float prevtrig = mPrevtrig;
-        double pos = mPos;
-        double start = (double)(*reinterpret_cast<int32*>(&startIntAsFloat)) + startDec;
-        double end = (double)(*reinterpret_cast<int32*>(&endIntAsFloat)) + endDec;
-        int playing = mPlaying;
+        SP_TEST_TRIG
 
-        if (prevtrig <= 0.f && trig > 0.f) {
-            pos = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat)) + resetDec;
-            playing = 0;
-        }
-
-        int32 posInt;
-        float posDec;
-        // perform a loop for the number of samples in the control period.
         for (int i=0; i < inNumSamples; ++i)
         {
-            // write the output
-            int32 posInt = (int32)pos;
-            outInt[i] = *reinterpret_cast<float*>(&posInt);
-            outDec[i] = pos - posInt;
-
-            outPlaying[i] = (playing == 0);
-
-            if (playing == -1 && rate > 0) {
-                playing = 0;
-            }
-
-            if (playing == 1 && rate < 0) {
-                playing = 0;
-            }
-
-            if (playing == 0) {
-                pos += rate;
-            }
-
-            if (pos >= end) {
-                if (loop) {
-                    pos = pos - end + start;
-                    playing = 0;
-                } else {
-                    pos = end;
-                    playing = 1;
-                }
-            }
-            if (pos <= start) {
-                if (loop) {
-                    pos = pos - start + end;
-                    playing = 0;
-                } else {
-                    pos = start;
-                    playing = -1;
-                }
-            }
+            SP_WRITE_OUTS
+            SP_INCREMENT_POS
         }
 
-        // store back to the struct
-        mPrevtrig = trig;
-        mPos = pos;
-        mPlaying = playing;
+        SP_STORE_STRUCT
     }
 
     //////////////////////////////////////////////////////////////////
@@ -141,7 +169,22 @@ private:
     // calculation function for audio rate rate
     void next_ka(int inNumSamples)
     {
+        SP_GET_INS_OUTS
 
+        const float trig = in0(0);
+        const float* rateBlock = in(1);
+        float rate;
+
+        SP_TEST_TRIG
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            rate = rateBlock[i];
+            SP_WRITE_OUTS
+            SP_INCREMENT_POS
+        }
+
+        SP_STORE_STRUCT
     }
 
     //////////////////////////////////////////////////////////////////
@@ -149,7 +192,22 @@ private:
     // calculation function for audio rate trig
     void next_ak(int inNumSamples)
     {
+        SP_GET_INS_OUTS
 
+        const float* trigBlock = in(0);
+        const float rate = in0(1);
+        float trig;
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            trig = trigBlock[i];
+            SP_TEST_TRIG
+            SP_WRITE_OUTS
+            SP_INCREMENT_POS
+            prevtrig = trig;
+        }
+
+        SP_STORE_STRUCT
     }
 
     //////////////////////////////////////////////////////////////////
@@ -157,7 +215,24 @@ private:
     // calculation function for audio rate trig and rate
     void next_aa(int inNumSamples)
     {
+        SP_GET_INS_OUTS
 
+        const float* trigBlock = in(0);
+        const float* rateBlock = in(1);
+        float trig;
+        float rate;
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            trig = trigBlock[i];
+            rate = rateBlock[i];
+            SP_TEST_TRIG
+            SP_WRITE_OUTS
+            SP_INCREMENT_POS
+            prevtrig = trig;
+        }
+
+        SP_STORE_STRUCT
     }
 };
 

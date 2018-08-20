@@ -111,6 +111,8 @@ make
 Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.
 
 ## Windows build instructions
+I'm not a Windows expert, but these are the steps that worked for me on a 64-bit version of Windows 10. If you have a 32-bit version, omit the "Win64" from the first cmake line below.
+
 - Install git
 - Install cmake
 - Install visual studio community 2017 / Desktop development with C++

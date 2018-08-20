@@ -7,7 +7,17 @@ This implementation is a work in progress.
 
 [Full spec / documentation of classes here](https://gist.github.com/esluyter/53597bed464d16fdb603c9db8405e3a9)
 
-## Example usage using SuperPlayBuf pseudo-ugen
+## Simple example usage of SuperPlayBuf pseudo-ugen
+```
+// sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
+~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
+
+// wait for file to load....
+
+{ SuperPlayBuf.ar(2, ~buf, MouseX.kr(-5, 5)) }.play;
+```
+
+## More elaborate example
 ```
 // sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
 ~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });

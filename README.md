@@ -95,9 +95,10 @@ OSCdef(\trig, { |msg|
 ```
 
 ## Build instructions
-Install Xcode command-line tools.
+- Install Xcode command-line tools.
+- Make sure you have a copy of the SuperCollider source code
 
-Make sure you have a copy of the SuperCollider source code, then run the following commands:
+Run the following commands in a terminal:
 ```
 git clone https://github.com/esluyter/super-bufrd.git
 cd super-bufrd
@@ -110,13 +111,12 @@ make
 Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.
 
 ## Windows build instructions
-Install git
-Install cmake
-Install visual studio community 2017 / Desktop development with C++
+- Install git
+- Install cmake
+- Install visual studio community 2017 / Desktop development with C++
+- Make sure you have a copy of the SuperCollider source code
 
-Reboot
-
-Make sure you have a copy of the SuperCollider source code, then run the following commands in git bash:
+Run the following commands in git bash:
 ```
 git clone https://github.com/esluyter/super-bufrd
 cd super-bufrd
@@ -125,7 +125,6 @@ cd build
 cmake -G "Visual Studio 15 2017 Win64" -DSC_PATH=/path/to/sc3source ..
 cmake --build . --config Release
 ```
-
 Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.
 
 ## TODO

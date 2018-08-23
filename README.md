@@ -104,8 +104,8 @@ OSCdef(\trig, { |msg|
 ~setPlayhead.(60 * 60); // 1 hour in
 ```
 
-## Build instructions
-- Install Xcode command-line tools.
+## Mac / Linux build instructions
+- On a Mac, make sure you have Xcode command-line tools installed
 - Make sure you have a copy of the SuperCollider source code
 
 Run the following commands in a terminal:

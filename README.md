@@ -1,28 +1,30 @@
 # super-bufrd
-**SuperPhasor.ar** and **SuperBufRd.ar**, UGens for accessing long buffers with subsample accuracy.
-
-To get around 32-bit floating point numbers' lack of precision, each position value is represented by two numbers, an integer value which is a 32-bit int recast as a float, and a decimal value which is a float between 0 and 1. These are internally added together to make a double.
-
-This implementation is a work in progress.
+UGens for accessing long buffers with subsample accuracy:
+- **SuperBufRd** A modification of BufRd to be able to access samples with double precision
+- **SuperPhasor** A new phasor UGen to drive a SuperBufRd
+- **SuperPhasorX** A new phasor UGen to drive multiple SuperBufRds with crossfading to allow for click-free looping and position jumping
+- **SuperIndex** A sclang class to communicate position information with these UGens
+- **SuperPlayBuf** A pseudo-ugen wrapper around a SuperPhasor and SuperBufRd, similar to PlayBuf
+- **SuperPlayBufDetails** Same thing but outputs the phasor information as well as audio signal
+- **SuperPlayBufX** / **SuperPlayBufXDetails** Like SuperPlayBuf/SuperPlayBufDetails but offers crossfading at loop points and on jumping to a new position
 
 [Full spec / documentation of classes here](https://gist.github.com/esluyter/53597bed464d16fdb603c9db8405e3a9)
 
-## Simple example usage of SuperPlayBuf pseudo-ugen
+This implementation is a work in progress.
+
+## Simple example usage of SuperPlayBufX pseudo-ugen
 ```
 // sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
 ~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
-
-// wait for file to load....
-
-{ SuperPlayBuf.ar(2, ~buf, MouseX.kr(-5, 5)) }.play;
+// wait for buffer to load then play it on a loop, mouse controls speed from 5x forward to 5x in reverse
+x = { |t_trig=0, pos=#[0,0]| SuperPlayBufX.ar(2, ~buf, MouseX.kr(-5, 5), cuePos:pos, cueTrig:t_trig) }.play;
+// jump to a certain position in seconds:
+x.set(\pos, ~buf.atSec(230.704), \t_trig, 1);
 ```
 
-## More elaborate example
+## More elaborate example with playhead
 ```
-// sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
 ~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
-
-// wait for file to load....
 
 (
 ~synth = {
@@ -31,7 +33,7 @@ This implementation is a work in progress.
   var rate = MouseX.kr(-12, 12);
   var lpf_freq = rate.abs.linlin(1, 3, 20000, 5000); // make fast forward less grating on ears
   var sig, playhead, isPlaying;
-  #sig, playhead, isPlaying = SuperPlayBufDetails.ar(2, ~buf, rate, cuePos: cuePos, cueTrig: cueTrig);
+  #sig, playhead, isPlaying = SuperPlayBufXDetails.ar(2, ~buf, rate, cuePos: cuePos, cueTrig: cueTrig);
   SendTrig.ar(Impulse.ar(10), 0, playhead[0]); // send integer component of playhead
   LPF.ar(sig, lpf_freq);
 }.play;
@@ -51,57 +53,6 @@ OSCdef(\trig, { |msg|
 ~synth.set(\cuePos, ~buf.atSec(60 * 10), \cueTrig, 1) // 10 minutes in
 ~synth.set(\cuePos, ~buf.atSec(60 * 40), \cueTrig, 1) // 40 minutes in
 ~synth.set(\cuePos, ~buf.atSec(60 * 60), \cueTrig, 1) // 1 hour in
-```
-
-## Same thing using the SuperPhasor and SuperBufRd ugens directly
-```
-// sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
-~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
-
-// wait for file to load....
-
-(
-~synth = { |t_trig, resetInt|
-  var phaseInt, phaseDec, playing;
-  var rate = MouseX.kr(-12, 12);
-  var lpf_freq = rate.abs.linlin(1, 3, 20000, 5000); // make fast forward less grating on ears
-  # phaseInt, phaseDec, playing = SuperPhasor.ar(
-    t_trig, // Trigger to move playhead
-    BufRateScale.kr(~buf) * rate,
-    0, 0, // start of section to play or loop (beginning of buffer)
-    Float.from32Bits(~buf.numFrames), 0,  // end of section to play or loop (end of buffer)
-    resetInt, 0, // time to move the playhead, start pos
-    loop: 1 // stop playing at beginning and end of buffer
-  );
-
-  // send phase information 10x per second - only care about integer (sample number)
-  SendTrig.ar(Impulse.ar(10), 0, phaseInt);
-
-  LPF.ar(
-    SuperBufRd.ar(2, ~buf, phaseInt, phaseDec, 0, 2),
-    lpf_freq
-  );
-}.play;
-
-// print the elapsed time:
-OSCdef(\trig, { |msg|
-  if (msg[2] == 0) {
-    ("Start: %       Playhead: %       End: %".format(
-      0.asTimeString,
-      (msg[3].as32Bits / ~buf.sampleRate).asTimeString,
-      ~buf.duration.asTimeString)
-    ).postln;
-  };
-}, '/tr');
-
-~setPlayhead = { |secs|
-  ~synth.set(\resetInt, Float.from32Bits(~buf.sampleRate * secs), \t_trig, 1);
-};
-)
-
-~setPlayhead.(60 * 20); // 20 minutes in
-~setPlayhead.(60 * 40); // 40 minutes in
-~setPlayhead.(60 * 60); // 1 hour in
 ```
 
 ## Mac / Linux build instructions
@@ -141,5 +92,4 @@ Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile 
 
 ## TODO
 - Enforce size limit of 2139095040 samples
-- Loop with crossfade
 - Probably much more....

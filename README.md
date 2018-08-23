@@ -13,17 +13,19 @@ UGens for accessing long buffers with subsample accuracy:
 This implementation is a work in progress.
 
 ## Simple example usage of SuperPlayBufX pseudo-ugen
-```
+```supercollider
 // sound file up to 2139095040 samples long (i.e. up to 12 hours long at 48k)
 ~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
+
 // wait for buffer to load then play it on a loop, mouse controls speed from 5x forward to 5x in reverse
 x = { |t_trig=0, pos=#[0,0]| SuperPlayBufX.ar(2, ~buf, MouseX.kr(-5, 5), cuePos:pos, cueTrig:t_trig) }.play;
+
 // jump to a certain position in seconds:
 x.set(\pos, ~buf.atSec(230.704), \t_trig, 1);
 ```
 
 ## More elaborate example with playhead
-```
+```supercollider
 ~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
 
 (

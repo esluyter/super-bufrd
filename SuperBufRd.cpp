@@ -27,11 +27,73 @@ float prevtrig = mPrevtrig; \
 double pos = mPos; \
 int playing = mPlaying; \
 
+#define SPX_GET_INS_OUTS \
+float *phase0IntAsFloat = out(0); \
+float *phase0Dec = out(1); \
+float *phase1IntAsFloat = out(2); \
+float *phase1Dec = out(3); \
+float *pan0 = out(4); \
+float *phase2IntAsFloat = out(5); \
+float *phase2Dec = out(6); \
+float *phase3IntAsFloat = out(7); \
+float *phase3Dec = out(8); \
+float *pan1 = out(9); \
+float *pan2 = out(10); \
+float *outPlaying = out(11); \
+float startIntAsFloat = in0(2); \
+float startDec = in0(3); \
+double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat)); \
+double startDecAsDouble = (double)startDec; \
+double start = startIntAsDouble + startDecAsDouble; \
+float endIntAsFloat = in0(4); \
+float endDec = in0(5); \
+double endIntAsDouble = (double)(*reinterpret_cast<int32*>(&endIntAsFloat)); \
+double endDecAsDouble = (double)endDec; \
+double end = endIntAsDouble + endDecAsDouble; \
+float resetIntAsFloat = in0(6); \
+float resetDec = in0(7); \
+const int loop = (int)in0(8); \
+int overlap = (int)in0(9); \
+if (overlap > (end - start) * 0.5) { \
+    overlap = (int)((end - start) * 0.5); \
+} else if (overlap < 0) { \
+    overlap = 0; \
+} \
+float prevtrig = mPrevtrig; \
+double pos = mPos; \
+int playing = mPlaying; \
+int isOverlapping = mIsOverlapping; \
+double oldPos = mOldPos; \
+double overlapPos = mOverlapPos; \
+int oldPlaying = mOldPlaying; \
+int firstTime = mFirstTime; \
+
+
 #define SP_TEST_TRIG \
 if (prevtrig <= 0.f && trig > 0.f) { \
     double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat)); \
     double resetDecAsDouble = (double)resetDec; \
     double reset = resetIntAsDouble + resetDecAsDouble; \
+    if (reset < start) { \
+        pos = start; \
+    } else { \
+        pos = reset; \
+    } \
+    playing = 0; \
+} \
+
+#define SPX_TEST_TRIG \
+if (prevtrig <= 0.f && trig > 0.f) { \
+    oldPos = pos; \
+    oldPlaying = playing; \
+    overlapPos = 0; \
+    isOverlapping = 1; \
+    double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat)); \
+    double resetDecAsDouble = (double)resetDec; \
+    double reset = resetIntAsDouble + resetDecAsDouble; \
+    if (reset < (start + overlap) && rate > 0) { \
+        firstTime = 1; \
+    } \
     if (reset < start) { \
         pos = start; \
     } else { \
@@ -46,16 +108,48 @@ outIntAsFloat[i] = *reinterpret_cast<float*>(&posInt); \
 outDec[i] = pos - posInt; \
 outPlaying[i] = (playing == 0); \
 
+#define SPX_WRITE_OUTS \
+int32 posInt = (int32)pos; \
+phase0IntAsFloat[i] = *reinterpret_cast<float*>(&posInt); \
+phase0Dec[i] = pos - posInt; \
+if (loop && pos < overlap && !firstTime) { \
+    double endPos = pos + end - overlap; \
+    int32 endPosInt = (int32)endPos; \
+    phase1IntAsFloat[i] = *reinterpret_cast<float*>(&endPosInt); \
+    phase1Dec[i] = endPos - endPosInt; \
+    pan0[i] = 1 - (2 * pos / (overlap - 1)); \
+} else { \
+    phase1IntAsFloat[i] = 0; \
+    phase1Dec[i] = 0; \
+    pan0[i] = -1; \
+} \
+if (isOverlapping) { \
+    int32 oldPosInt = (int32)oldPos; \
+    phase2IntAsFloat[i] = *reinterpret_cast<float*>(&oldPosInt); \
+    phase2Dec[i] = oldPos - oldPosInt; \
+    if (loop && oldPos < overlap) { \
+        double endOldPos = oldPos + end - overlap; \
+        int32 endOldPosInt = (int32)endOldPos; \
+        phase3IntAsFloat[i] = *reinterpret_cast<float*>(&endOldPosInt); \
+        phase3Dec[i] = endOldPos - endOldPosInt; \
+        pan1[i] = 1 - (2 * oldPos / (overlap - 1)); \
+    } else { \
+        phase3IntAsFloat[i] = 0; \
+        phase3Dec[i] = 0; \
+        pan1[i] = -1; \
+    } \
+    pan2[i] = 1 - (2 * overlapPos / (overlap - 1)); \
+} else { \
+    phase2IntAsFloat[i] = 0; \
+    phase2Dec[i] = 0; \
+    phase3IntAsFloat[i] = 0; \
+    phase3Dec[i] = 0; \
+    pan1[i] = -1; \
+    pan2[i] = -1; \
+} \
+outPlaying[i] = (playing == 0); \
+
 #define SP_INCREMENT_POS \
-if (playing == -1 && (rate > 0 || start < pos)) { \
-    playing = 0; \
-} \
-if (playing == 1 && (rate < 0 || end > pos)) { \
-    playing = 0; \
-} \
-if (playing == 0) { \
-    pos += rate; \
-} \
 if (pos >= end) { \
     if (loop) { \
         while (pos >= end) { \
@@ -78,11 +172,88 @@ if (pos <= start) { \
         playing = -1; \
     } \
 } \
+if (playing == -1 && (rate > 0 || start < pos)) { \
+    playing = 0; \
+} \
+if (playing == 1 && (rate < 0 || end > pos)) { \
+    playing = 0; \
+} \
+if (playing == 0) { \
+    pos += rate; \
+} \
+
+#define SPX_INCREMENT_POS \
+if (loop) { \
+    playing = 0; \
+} \
+if (playing == -1 && (rate > 0 || start < pos)) { \
+    playing = 0; \
+} \
+if (playing == 1 && (rate < 0 || end > pos)) { \
+    playing = 0; \
+} \
+if (playing == 0) { \
+    pos += rate; \
+} \
+if (loop) { \
+    while (pos >= (end - overlap)) { \
+        pos = pos - (end - overlap) + start; \
+    } \
+    while (pos < start) { \
+        pos = pos - start + (end - overlap); \
+    } \
+} else { \
+    if (pos >= end) { \
+        pos = end; \
+        playing = 1; \
+    } else if (pos <= start) { \
+        pos = start; \
+        playing = -1; \
+    } \
+} \
+if (firstTime && pos > overlap) { \
+    firstTime = 0; \
+} \
+if (isOverlapping) { \
+    if (oldPlaying == 0) { \
+        oldPos += rate; \
+    } \
+    overlapPos += 1; \
+    if (overlapPos >= overlap) { \
+        isOverlapping = 0; \
+    } \
+    if (loop) { \
+        while (oldPos >= (end - overlap)) { \
+            oldPos = oldPos - (end - overlap) + start; \
+        } \
+        while (oldPos < start) { \
+            oldPos = oldPos - start + (end - overlap); \
+        } \
+    } else { \
+        if (oldPos >= end) { \
+            oldPos = end; \
+            oldPlaying = 1; \
+        } else if (oldPos <= start) { \
+            oldPos = start; \
+            oldPlaying = -1; \
+        } \
+    } \
+} \
 
 #define SP_STORE_STRUCT \
 mPrevtrig = trig; \
 mPos = pos; \
 mPlaying = playing; \
+
+#define SPX_STORE_STRUCT \
+mPrevtrig = trig; \
+mPos = pos; \
+mPlaying = playing; \
+mIsOverlapping = isOverlapping; \
+mOldPos = oldPos; \
+mOverlapPos = overlapPos; \
+mOldPlaying = oldPlaying; \
+mFirstTime = firstTime; \
 
 
 //////////////////////////////////////////////////////////////////
@@ -235,6 +406,177 @@ private:
         SP_STORE_STRUCT
     }
 };
+
+
+
+//////////////////////////////////////////////////////////////////
+// SUPERPHASORX
+//////////////////////////////////////////////////////////////////
+
+struct SuperPhasorX : public SCUnit{
+
+public:
+    SuperPhasorX() {
+        // 1. set the calculation function.
+        if (isAudioRateIn(0)) {
+            if (isAudioRateIn(1)) {
+                // both trig and rate are audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_aa>();
+            } else {
+                // only trig is audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_ak>();
+            }
+
+        } else {
+            if (isAudioRateIn(1)) {
+                // only rate is audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_ka>();
+            } else {
+                // nothing is audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_kk>();
+            }
+        }
+
+        // 2. initialize the unit generator state variables.
+        mPrevtrig = in0(0);
+        float rate = in0(1);
+        float startIntAsFloat = in0(2);
+        float startDec = in0(3);
+        double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat));
+        double startDecAsDouble = (double)startDec;
+        double start = startIntAsDouble + startDecAsDouble;
+        float resetIntAsFloat = in0(6);
+        float resetDec = in0(7);
+        double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat));
+        double resetDecAsDouble = (double)resetDec;
+        double reset = resetIntAsDouble + resetDecAsDouble;
+        int overlap = (int)in0(9);
+        if (reset < start) {
+            mPos = start;
+        } else {
+            mPos = reset;
+        }
+        mPlaying = 0;
+        mIsOverlapping = 0;
+        mOldPos = 0;
+        mOverlapPos = 0;
+        mOldPlaying = 0;
+        if (reset < (start + overlap) && rate > 0) {
+            mFirstTime = 1;
+        } else {
+            mFirstTime = 0;
+        }
+
+        // 3. calculate one sample of output.
+        next_kk(1);
+    }
+
+private:
+    float mPrevtrig;
+    double mPos;
+    int mPlaying;
+    int mIsOverlapping;
+    double mOldPos;
+    double mOverlapPos;
+    int mOldPlaying;
+    int mFirstTime;
+
+
+
+    //////////////////////////////////////////////////////////////////
+
+    // calculation function for all control rate arguments
+    void next_kk(int inNumSamples)
+    {
+        SPX_GET_INS_OUTS
+
+        const float trig = in0(0);
+        const float rate = in0(1);
+
+        SPX_TEST_TRIG
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            SPX_WRITE_OUTS
+            SPX_INCREMENT_POS
+        }
+
+        SPX_STORE_STRUCT
+    }
+
+    //////////////////////////////////////////////////////////////////
+
+    // calculation function for audio rate rate
+    void next_ka(int inNumSamples)
+    {
+        SPX_GET_INS_OUTS
+
+        const float trig = in0(0);
+        const float* rateBlock = in(1);
+        float rate = in0(1);
+
+        SPX_TEST_TRIG
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            rate = rateBlock[i];
+            SPX_WRITE_OUTS
+            SPX_INCREMENT_POS
+        }
+
+        SPX_STORE_STRUCT
+    }
+
+    //////////////////////////////////////////////////////////////////
+
+    // calculation function for audio rate trig
+    void next_ak(int inNumSamples)
+    {
+        SPX_GET_INS_OUTS
+
+        const float* trigBlock = in(0);
+        const float rate = in0(1);
+        float trig;
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            trig = trigBlock[i];
+            SPX_TEST_TRIG
+            SPX_WRITE_OUTS
+            SPX_INCREMENT_POS
+            prevtrig = trig;
+        }
+
+        SPX_STORE_STRUCT
+    }
+
+    //////////////////////////////////////////////////////////////////
+
+    // calculation function for audio rate trig and rate
+    void next_aa(int inNumSamples)
+    {
+        SPX_GET_INS_OUTS
+
+        const float* trigBlock = in(0);
+        const float* rateBlock = in(1);
+        float trig;
+        float rate = in0(1);
+
+        for (int i=0; i < inNumSamples; ++i)
+        {
+            trig = trigBlock[i];
+            rate = rateBlock[i];
+            SPX_TEST_TRIG
+            SPX_WRITE_OUTS
+            SPX_INCREMENT_POS
+            prevtrig = trig;
+        }
+
+        SPX_STORE_STRUCT
+    }
+};
+
+
 
 
 //////////////////////////////////////////////////////////////////
@@ -574,7 +916,7 @@ PluginLoad(SuperBufRdUGens)
     // destructor function.
     // However, it does not seem to be possible to disable buffer aliasing with the C++ header.
     registerUnit<SuperPhasor>(ft, "SuperPhasor");
-    //registerUnit<SuperBufRd>(ft, "SuperBufRd");
+    registerUnit<SuperPhasorX>(ft, "SuperPhasorX");
 
     DefineSimpleUnit(SuperBufRd);
 

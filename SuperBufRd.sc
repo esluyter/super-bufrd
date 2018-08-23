@@ -43,7 +43,7 @@ SuperBufFrames : BufInfoUGenBase {}
 
 
 SuperPlayBuf {
-    *ar { arg numChannels=1, bufnum=0, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=0, interpolation=0;
+    *ar { arg numChannels=1, bufnum=0, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=1, interpolation=0;
         var phaseInt, phaseDec, playing;
         startPos = startPos.asArray;
         endPos = endPos ? [SuperBufFrames.kr(bufnum), 0];
@@ -61,7 +61,7 @@ SuperPlayBuf {
 }
 
 SuperPlayBufDetails {
-    *ar { arg numChannels=1, bufnum=0, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=0, interpolation=0;
+    *ar { arg numChannels=1, bufnum=0, rate=1, startPos=[0,0], endPos=nil, cuePos=[0,0], cueTrig=0, loop=1, interpolation=0;
         var phaseInt, phaseDec, playing;
         startPos = startPos.asArray;
         endPos = endPos ? [SuperBufFrames.kr(bufnum), 0];

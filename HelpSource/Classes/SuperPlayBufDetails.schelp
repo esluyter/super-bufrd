@@ -1,0 +1,75 @@
+TITLE:: SuperPlayBufDetails
+summary:: For playback of long sound buffers with sample-accurate playhead information.
+categories:: UGens>Buffer
+related:: Classes/PlayBuf, Classes/SuperPhasor, Classes/SuperBufRd, Classes/SuperPlayBuf, Classes/SuperPlayBufX, Classes/SuperPlayBufXDetails
+
+DESCRIPTION::
+Pseudo-UGen wrapper around link::Classes/SuperPhasor:: and link::Classes/SuperBufRd:: UGens. Behaves pretty much like link::Classes/PlayBuf:: with the added benefits that it tells you where exactly the current play position is; you can set a beginning and end of a playback range; rate is relative to buffer's sample rate; you can cue long sound buffers with subsample accuracy; and you can specify what interpolation you want. Another difference from PlayBuf is that playback starts at cuePos rather than startPos.
+
+The position arguments take an int/float pair to get around scsynth's architectural limitation that only supports 32-bit floating point values; the easiset way to obtain this pair is to use Buffer's .atSec method as shown below.
+
+See link::Classes/SuperPlayBuf:: for a similar pseudo-UGen that does not output playhead information.
+
+See link::Classes/SuperPlayBufX:: and link::Classes/SuperPlayBufXDetails:: for a similar family of pseudo-UGen that implements crossfading to eliminate clicks on looping and jumping position.
+
+
+CLASSMETHODS::
+
+METHOD:: ar
+
+ARGUMENT:: numChannels
+Number of channels that the buffer will be. This must be a fixed integer. The architecture of the SynthDef cannot change after it is compiled. (ir)
+
+ARGUMENT:: bufnum
+The index of the buffer to use. (kr)
+
+ARGUMENT:: rate
+1 plays at the buffer's normal speed, 0.5 half speed, 2 double, etc. (kr or ar)
+
+ARGUMENT:: startPos
+An int/float pair specifying beginning of loop / playback range. (kr)
+
+ARGUMENT:: endPos
+An int/float pair specifying end of loop / playback range. If nil, defaults to end of buffer. (kr)
+
+ARGUMENT:: cuePos
+An int/float pair specifying where to start playback. (If less than startPos this will be startPos.) On a cueTrig, playback jumps to this position. (kr)
+
+ARGUMENT:: cueTrig
+On a trigger, jump to cuePos. A trigger occurs when a signal changes from negative value to positive value. (kr or ar)
+
+ARGUMENT:: loop
+Whether to loop or stop playback at start/end. 1 means true, 0 means false. (kr)
+
+ARGUMENT:: interpolation
+1 is no interpolation, 2 is linear, 4 is cubic. (ir)
+
+
+INSTANCEMETHODS::
+
+
+EXAMPLES::
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+(
+{
+  var sig, playhead;
+  # sig, playhead = SuperPlayBufDetails.ar(1, b, MouseX.kr(0.1, 10, \exponential), cuePos:b.atSec(b.duration / 2), cueTrig: MouseButton.kr(0, 1, 0));
+  SendTrig.ar(Impulse.ar(10), 0, playhead[0]); // send integer component of playhead
+  sig!2;
+}.play;
+
+// print the elapsed time:
+OSCdef(\trig, { |msg|
+  if (msg[2] == 0) {
+    ("Start: %       Playhead: %       End: %".format(
+      0.asTimeString,
+      b.atPair([msg[3], 0]).asSecs.asTimeString,
+      b.duration.asTimeString)
+    ).postln;
+  };
+}, '/tr');
+)
+::

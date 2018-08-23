@@ -1,0 +1,58 @@
+TITLE:: SuperBufRd
+summary:: A modification of BufRd to be able to access samples with double precision.
+categories:: UGens>Buffer
+related:: Classes/BufRd, Classes/SuperPhasor, Classes/SuperPlayBuf, Classes/SuperPlayBufX
+
+DESCRIPTION::
+Read the content of a buffer at an index.
+
+Index is specified by a special int/float pair provided by link::Classes/SuperPhasor:: / link::Classes/SuperPhasorX::. This is to get around scsynth's architectural limitation that only supports 32-bit floating point values. To generate such a pair directly in sclang, use link::Classes/SuperIndex::.
+
+note::
+For most purposes it is probably much easier to use the link::Classes/SuperPlayBuf:: / link::Classes/SuperPlayBufX:: family of pseudo-ugens.
+::
+
+CLASSMETHODS::
+
+METHOD:: ar
+
+ARGUMENT:: numChannels
+The number of channers the buffer will be. This must be a fixed
+integer. The architecture of the SynthDef cannot change after it
+is compiled.
+
+ARGUMENT:: bufnum
+The index of the buffer to use. (kr)
+
+ARGUMENT:: phaseInt
+The integer portion of the index into the buffer, as provided by link::Classes/SuperPhasor::. (ar)
+
+ARGUMENT:: phaseDec
+The fractional portion of the index into the buffer, as provided by link::Classes/SuperPhasor::. (ar)
+
+ARGUMENT:: loop
+Whether or not to loop back to the beginning of the buffer if provided an index beyond the end of the buffer. 1 means true, 0 means false. (kr)
+
+ARGUMENT:: interpolation
+1 means no interpolation, 2 is linear, 4 is cubic interpolation. (ir)
+
+
+
+INSTANCEMETHODS::
+
+PRIVATE:: init, argNamesInputsOffset, checkInputs
+
+
+EXAMPLES::
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+(
+{
+  var phaseInt, phaseDec;
+  # phaseInt, phaseDec = SuperPhasor.ar(0, BufRateScale.kr(b), 0, 0, Float.from32Bits(b.numFrames), 0);
+  SuperBufRd.ar(1, b, phaseInt, phaseDec);
+}.play;
+)
+::

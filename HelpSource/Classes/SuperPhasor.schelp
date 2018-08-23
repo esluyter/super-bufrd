@@ -1,0 +1,69 @@
+TITLE:: SuperPhasor
+summary:: UGen to interface with SuperBufRd for playback of long sound buffers.
+categories:: UGens>Triggers, UGens>Buffer
+related:: Classes/Phasor, Classes/SuperPhasorX, Classes/SuperBufRd, Classes/SuperPlayBuf, Classes/SuperPlayBufX
+
+DESCRIPTION::
+To get around scsynth's architectural limitation that only supports 32-bit floating point values, SuperPhasor and link::Classes/SuperBufRd:: use pairs of floats representing integer / float components of a double-precision value. To generate such a pair directly in sclang, use link::Classes/SuperIndex::.
+
+SuperPhasor outputs a pair of these floats which can be plugged directly into a SuperBufRd like so:
+
+image::SuperPhasorSm.png#Figure 1. SuperPhasor diagram::
+
+note::
+For most purposes it is probably much easier to use the link::Classes/SuperPlayBuf:: / link::Classes/SuperPlayBufX:: family of pseudo-ugens.
+::
+
+CLASSMETHODS::
+
+METHOD:: ar
+
+ARGUMENT:: trig
+When triggered, jump to the reset position. (kr or ar)
+
+ARGUMENT:: rate
+The amount of change per sample, i.e. at a rate of 1 the value of each sample will be 1 greater than the preceding sample. This can be positive or negative. (kr or ar)
+
+ARGUMENT:: startInt
+Integer portion of the start position of the loop / playback range. (kr)
+
+ARGUMENT:: startDec
+Fractional portion of the start position of the loop / playback range. (kr)
+
+ARGUMENT:: endInt
+Integer portion of the end position of the loop / playback range. (kr)
+
+ARGUMENT:: endDec
+Fractional portion of the end position of the loop / playback range. (kr)
+
+ARGUMENT:: resetInt
+Integer portion of the reset position. (kr)
+
+ARGUMENT:: resetDec
+Fractional portion of the reset position. (kr)
+
+ARGUMENT:: loop
+Whether to loop at the ends of the playback range or not. 1 is true, 0 is false. (kr)
+
+returns:: [phaseInt, phaseDec, isPlaying]
+
+
+INSTANCEMETHODS::
+
+PRIVATE:: init
+
+
+EXAMPLES::
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+(
+{
+  var phaseInt, phaseDec;
+  var trig = MouseButton.kr(0, 1, 0);
+  # phaseInt, phaseDec = SuperPhasor.ar(trig, BufRateScale.kr(b) * MouseX.kr(0.1, 10, \exponential), 0, 0, Float.from32Bits(b.numFrames), 0, Float.from32Bits(b.numFrames/2));
+  SuperBufRd.ar(1, b, phaseInt, phaseDec)!2;
+}.play;
+)
+::

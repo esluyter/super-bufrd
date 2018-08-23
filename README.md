@@ -91,7 +91,3 @@ cmake -G "Visual Studio 15 2017 Win64" -DSC_PATH=/path/to/sc3source ..
 cmake --build . --config Release
 ```
 Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.
-
-## TODO
-- Enforce size limit of 2139095040 samples
-- Probably much more....

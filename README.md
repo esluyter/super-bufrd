@@ -3,6 +3,7 @@ UGens for accessing long buffers with subsample accuracy:
 - **SuperBufRd** A modification of BufRd to be able to access samples with double precision
 - **SuperPhasor** A new phasor UGen to drive a SuperBufRd
 - **SuperPhasorX** A new phasor UGen to drive multiple SuperBufRds with crossfading to allow for click-free looping and position jumping
+- **SuperBufFrames** A modification of BufFrames
 - **SuperIndex** A sclang class to communicate position information with these UGens
 - **SuperPlayBuf** A pseudo-ugen wrapper around a SuperPhasor and SuperBufRd, similar to PlayBuf
 - **SuperPlayBufDetails** Same thing but outputs the phasor information as well as audio signal

@@ -1,0 +1,20 @@
+TITLE:: SuperBufFrames
+summary:: Current number of frames allocated in the buffer, as int32 cast as float
+categories:: UGens>Buffer>Info
+related:: Classes/SuperPhasor, Classes/SuperBufRd
+
+DESCRIPTION::
+Current number of frames allocated in the buffer, as int32 cast as float. To be used with link::Classes/SuperPhasor:: et al. as integer component of position.
+
+
+CLASSMETHODS::
+
+
+INSTANCEMETHODS::
+
+
+EXAMPLES::
+
+code::
+(some example code)
+::

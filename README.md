@@ -11,7 +11,7 @@ UGens for accessing long buffers with subsample accuracy:
 
 [Full spec / documentation of classes here](https://gist.github.com/esluyter/53597bed464d16fdb603c9db8405e3a9)
 
-This implementation is a work in progress. If you find bugs or have feature requests please submit an issue!
+This implementation is a work in progress. I am aware that once in a while the ugens will simply hang the server on instantiation, I am looking into this and would welcome any insight. If you find bugs or have feature requests please submit an issue!
 
 ## Simple example usage of SuperPlayBufX pseudo-ugen
 ```supercollider

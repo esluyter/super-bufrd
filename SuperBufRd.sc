@@ -135,16 +135,19 @@ SuperIndex {
 
     *new { arg sampleNum=0, sampleRate;
         sampleRate = sampleRate ? Server.default.sampleRate;
+        sampleRate = sampleRate ? 44100;
         ^super.newCopyArgs(sampleNum, sampleRate);
     }
 
     *fromSecs { arg secs=0, sampleRate;
         sampleRate = sampleRate ? Server.default.sampleRate;
+        sampleRate = sampleRate ? 44100;
         ^super.newCopyArgs(secs * sampleRate, sampleRate);
     }
 
     *fromPair { arg pair, sampleRate;
         sampleRate = sampleRate ? Server.default.sampleRate;
+        sampleRate = sampleRate ? 44100;
         ^super.newCopyArgs(pair[0].as32Bits + pair[1], sampleRate);
     }
 

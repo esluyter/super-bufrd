@@ -264,27 +264,7 @@ struct SuperPhasor : public SCUnit{
 
 public:
     SuperPhasor() {
-        // 1. set the calculation function.
-        if (isAudioRateIn(0)) {
-            if (isAudioRateIn(1)) {
-                // both trig and rate are audio rate
-                set_calc_function<SuperPhasor,&SuperPhasor::next_aa>();
-            } else {
-                // only trig is audio rate
-                set_calc_function<SuperPhasor,&SuperPhasor::next_ak>();
-            }
-
-        } else {
-            if (isAudioRateIn(1)) {
-                // only rate is audio rate
-                set_calc_function<SuperPhasor,&SuperPhasor::next_ka>();
-            } else {
-                // nothing is audio rate
-                set_calc_function<SuperPhasor,&SuperPhasor::next_kk>();
-            }
-        }
-
-        // 2. initialize the unit generator state variables.
+        // 1. initialize the unit generator state variables.
         mPrevtrig = in0(0);
         float startIntAsFloat = in0(2);
         float startDec = in0(3);
@@ -303,8 +283,25 @@ public:
         }
         mPlaying = 0;
 
-        // 3. calculate one sample of output.
-        next_kk(1);
+        // 2. set calc function
+        if (isAudioRateIn(0)) {
+            if (isAudioRateIn(1)) {
+                // both trig and rate are audio rate
+                set_calc_function<SuperPhasor,&SuperPhasor::next_aa>();
+            } else {
+                // only trig is audio rate
+                set_calc_function<SuperPhasor,&SuperPhasor::next_ak>();
+            }
+
+        } else {
+            if (isAudioRateIn(1)) {
+                // only rate is audio rate
+                set_calc_function<SuperPhasor,&SuperPhasor::next_ka>();
+            } else {
+                // nothing is audio rate
+                set_calc_function<SuperPhasor,&SuperPhasor::next_kk>();
+            }
+        }
     }
 
 private:
@@ -417,27 +414,7 @@ struct SuperPhasorX : public SCUnit{
 
 public:
     SuperPhasorX() {
-        // 1. set the calculation function.
-        if (isAudioRateIn(0)) {
-            if (isAudioRateIn(1)) {
-                // both trig and rate are audio rate
-                set_calc_function<SuperPhasorX,&SuperPhasorX::next_aa>();
-            } else {
-                // only trig is audio rate
-                set_calc_function<SuperPhasorX,&SuperPhasorX::next_ak>();
-            }
-
-        } else {
-            if (isAudioRateIn(1)) {
-                // only rate is audio rate
-                set_calc_function<SuperPhasorX,&SuperPhasorX::next_ka>();
-            } else {
-                // nothing is audio rate
-                set_calc_function<SuperPhasorX,&SuperPhasorX::next_kk>();
-            }
-        }
-
-        // 2. initialize the unit generator state variables.
+        // 1. initialize the unit generator state variables.
         mPrevtrig = in0(0);
         float rate = in0(1);
         float startIntAsFloat = in0(2);
@@ -467,8 +444,25 @@ public:
             mFirstTime = 0;
         }
 
-        // 3. calculate one sample of output.
-        next_kk(1);
+        // 2. set the calculation function.
+        if (isAudioRateIn(0)) {
+            if (isAudioRateIn(1)) {
+                // both trig and rate are audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_aa>();
+            } else {
+                // only trig is audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_ak>();
+            }
+
+        } else {
+            if (isAudioRateIn(1)) {
+                // only rate is audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_ka>();
+            } else {
+                // nothing is audio rate
+                set_calc_function<SuperPhasorX,&SuperPhasorX::next_kk>();
+            }
+        }
     }
 
 private:

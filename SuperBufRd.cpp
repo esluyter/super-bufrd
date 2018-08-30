@@ -7,51 +7,45 @@ static InterfaceTable *ft;
 #define SP_UPPER_BOUND 2139095040
 
 #define SP_GET_INS_OUTS \
-float *outIntAsFloat = out(0); \
-float *outDec = out(1); \
+float *outMsd = out(0); \
+float *outLsd = out(1); \
 float *outPlaying = out(2); \
-float startIntAsFloat = in0(2); \
-float startDec = in0(3); \
-double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat)); \
-double startDecAsDouble = (double)startDec; \
-double start = startIntAsDouble + startDecAsDouble; \
-float endIntAsFloat = in0(4); \
-float endDec = in0(5); \
-double endIntAsDouble = (double)(*reinterpret_cast<int32*>(&endIntAsFloat)); \
-double endDecAsDouble = (double)endDec; \
-double end = endIntAsDouble + endDecAsDouble; \
-float resetIntAsFloat = in0(6); \
-float resetDec = in0(7); \
+double startMsd = in0(2); \
+double startLsd = in0(3); \
+double start = startMsd + startLsd; \
+double endMsd = in0(4); \
+double endLsd = in0(5); \
+double end = endMsd + endLsd; \
+double resetMsd = in0(6); \
+double resetLsd = in0(7); \
+double reset = resetMsd + resetLsd; \
 const int loop = (int)in0(8); \
 float prevtrig = mPrevtrig; \
 double pos = mPos; \
 int playing = mPlaying; \
 
 #define SPX_GET_INS_OUTS \
-float *phase0IntAsFloat = out(0); \
-float *phase0Dec = out(1); \
-float *phase1IntAsFloat = out(2); \
-float *phase1Dec = out(3); \
+float *phase0Msd = out(0); \
+float *phase0Lsd = out(1); \
+float *phase1Msd = out(2); \
+float *phase1Lsd = out(3); \
 float *pan0 = out(4); \
-float *phase2IntAsFloat = out(5); \
-float *phase2Dec = out(6); \
-float *phase3IntAsFloat = out(7); \
-float *phase3Dec = out(8); \
+float *phase2Msd = out(5); \
+float *phase2Lsd = out(6); \
+float *phase3Msd = out(7); \
+float *phase3Lsd = out(8); \
 float *pan1 = out(9); \
 float *pan2 = out(10); \
 float *outPlaying = out(11); \
-float startIntAsFloat = in0(2); \
-float startDec = in0(3); \
-double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat)); \
-double startDecAsDouble = (double)startDec; \
-double start = startIntAsDouble + startDecAsDouble; \
-float endIntAsFloat = in0(4); \
-float endDec = in0(5); \
-double endIntAsDouble = (double)(*reinterpret_cast<int32*>(&endIntAsFloat)); \
-double endDecAsDouble = (double)endDec; \
-double end = endIntAsDouble + endDecAsDouble; \
-float resetIntAsFloat = in0(6); \
-float resetDec = in0(7); \
+double startMsd = in0(2); \
+double startLsd = in0(3); \
+double start = startMsd + startLsd; \
+double endMsd = in0(4); \
+double endLsd = in0(5); \
+double end = endMsd + endLsd; \
+double resetMsd = in0(6); \
+double resetLsd = in0(7); \
+double reset = resetMsd + resetLsd; \
 const int loop = (int)in0(8); \
 int overlap = (int)in0(9); \
 if (overlap > (end - start) * 0.5) { \
@@ -71,9 +65,6 @@ int firstTime = mFirstTime; \
 
 #define SP_TEST_TRIG \
 if (prevtrig <= 0.f && trig > 0.f) { \
-    double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat)); \
-    double resetDecAsDouble = (double)resetDec; \
-    double reset = resetIntAsDouble + resetDecAsDouble; \
     if (reset < start) { \
         pos = start; \
     } else { \
@@ -88,9 +79,6 @@ if (prevtrig <= 0.f && trig > 0.f) { \
     oldPlaying = playing; \
     overlapPos = 0; \
     isOverlapping = 1; \
-    double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat)); \
-    double resetDecAsDouble = (double)resetDec; \
-    double reset = resetIntAsDouble + resetDecAsDouble; \
     if (reset < (start + overlap) && rate > 0) { \
         firstTime = 1; \
     } \
@@ -103,47 +91,52 @@ if (prevtrig <= 0.f && trig > 0.f) { \
 } \
 
 #define SP_WRITE_OUTS \
-int32 posInt = (int32)pos; \
-outIntAsFloat[i] = *reinterpret_cast<float*>(&posInt); \
-outDec[i] = pos - posInt; \
+float posMsd = (float)pos; \
+float posLsd = (float)(pos - posMsd); \
+outMsd[i] = posMsd; \
+outLsd[i] = posLsd; \
 outPlaying[i] = (playing == 0); \
 
 #define SPX_WRITE_OUTS \
-int32 posInt = (int32)pos; \
-phase0IntAsFloat[i] = *reinterpret_cast<float*>(&posInt); \
-phase0Dec[i] = pos - posInt; \
+float posMsd = (float)pos; \
+float posLsd = (float)(pos - posMsd); \
+phase0Msd[i] = posMsd; \
+phase0Lsd[i] = posLsd; \
 if (loop && pos < overlap && !firstTime) { \
     double endPos = pos + end - overlap; \
-    int32 endPosInt = (int32)endPos; \
-    phase1IntAsFloat[i] = *reinterpret_cast<float*>(&endPosInt); \
-    phase1Dec[i] = endPos - endPosInt; \
+    posMsd = (float)endPos; \
+    posLsd = (float)(endPos - posMsd); \
+    phase1Msd[i] = posMsd; \
+    phase1Lsd[i] = posLsd; \
     pan0[i] = 1 - (2 * pos / (overlap - 1)); \
 } else { \
-    phase1IntAsFloat[i] = 0; \
-    phase1Dec[i] = 0; \
+    phase1Msd[i] = 0; \
+    phase1Lsd[i] = 0; \
     pan0[i] = -1; \
 } \
 if (isOverlapping) { \
-    int32 oldPosInt = (int32)oldPos; \
-    phase2IntAsFloat[i] = *reinterpret_cast<float*>(&oldPosInt); \
-    phase2Dec[i] = oldPos - oldPosInt; \
+    posMsd = (float)oldPos; \
+    posLsd = (float)(oldPos - posMsd); \
+    phase2Msd[i] = posMsd; \
+    phase2Lsd[i] = posLsd; \
     if (loop && oldPos < overlap) { \
         double endOldPos = oldPos + end - overlap; \
-        int32 endOldPosInt = (int32)endOldPos; \
-        phase3IntAsFloat[i] = *reinterpret_cast<float*>(&endOldPosInt); \
-        phase3Dec[i] = endOldPos - endOldPosInt; \
+        posMsd = (float)endOldPos; \
+        posLsd = (float)(endOldPos - posMsd); \
+        phase3Msd[i] = posMsd; \
+        phase3Lsd[i] = posLsd; \
         pan1[i] = 1 - (2 * oldPos / (overlap - 1)); \
     } else { \
-        phase3IntAsFloat[i] = 0; \
-        phase3Dec[i] = 0; \
+        phase3Msd[i] = 0; \
+        phase3Lsd[i] = 0; \
         pan1[i] = -1; \
     } \
     pan2[i] = 1 - (2 * overlapPos / (overlap - 1)); \
 } else { \
-    phase2IntAsFloat[i] = 0; \
-    phase2Dec[i] = 0; \
-    phase3IntAsFloat[i] = 0; \
-    phase3Dec[i] = 0; \
+    phase2Msd[i] = 0; \
+    phase2Lsd[i] = 0; \
+    phase3Msd[i] = 0; \
+    phase3Lsd[i] = 0; \
     pan1[i] = -1; \
     pan2[i] = -1; \
 } \
@@ -266,16 +259,12 @@ public:
     SuperPhasor() {
         // 1. initialize the unit generator state variables.
         mPrevtrig = in0(0);
-        float startIntAsFloat = in0(2);
-        float startDec = in0(3);
-        double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat));
-        double startDecAsDouble = (double)startDec;
-        double start = startIntAsDouble + startDecAsDouble;
-        float resetIntAsFloat = in0(6);
-        float resetDec = in0(7);
-        double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat));
-        double resetDecAsDouble = (double)resetDec;
-        double reset = resetIntAsDouble + resetDecAsDouble;
+        double startMsd = in0(2);
+        double startLsd = in0(3);
+        double start = startMsd + startLsd;
+        double resetMsd = in0(6);
+        double resetLsd = in0(7);
+        double reset = resetMsd + resetLsd;
         if (reset < start) {
             mPos = start;
         } else {
@@ -417,16 +406,12 @@ public:
         // 1. initialize the unit generator state variables.
         mPrevtrig = in0(0);
         float rate = in0(1);
-        float startIntAsFloat = in0(2);
-        float startDec = in0(3);
-        double startIntAsDouble = (double)(*reinterpret_cast<int32*>(&startIntAsFloat));
-        double startDecAsDouble = (double)startDec;
-        double start = startIntAsDouble + startDecAsDouble;
-        float resetIntAsFloat = in0(6);
-        float resetDec = in0(7);
-        double resetIntAsDouble = (double)(*reinterpret_cast<int32*>(&resetIntAsFloat));
-        double resetDecAsDouble = (double)resetDec;
-        double reset = resetIntAsDouble + resetDecAsDouble;
+        double startMsd = in0(2);
+        double startLsd = in0(3);
+        double start = startMsd + startLsd;
+        double resetMsd = in0(6);
+        double resetLsd = in0(7);
+        double reset = resetMsd + resetLsd;
         int overlap = (int)in0(9);
         if (reset < start) {
             mPos = start;
@@ -784,8 +769,8 @@ void SuperBufRd_Ctor(SuperBufRd *unit)
 
 void SuperBufRd_next_4(SuperBufRd *unit, int inNumSamples)
 {
-    float *phaseInt = ZIN(1);
-    float *phaseDec = ZIN(2);
+    float *phaseMsd = ZIN(1);
+    float *phaseLsd = ZIN(2);
 	int32 loop     = (int32)ZIN0(3);
 
 	GET_BUF_SHARED
@@ -796,18 +781,17 @@ void SuperBufRd_next_4(SuperBufRd *unit, int inNumSamples)
 	double loopMax = (double)(loop ? bufFrames : bufFrames - 1);
 
 	for (int i=0; i<inNumSamples; ++i) {
-        float phaseIntIn = ZXP(phaseInt);
-        double phaseDecDub = ZXP(phaseDec);
-        double phaseIntDub = (double)(*reinterpret_cast<int32*>(&phaseIntIn));
-        double phase = phaseIntDub + phaseDecDub;
+        double phaseMsdIn = ZXP(phaseMsd);
+        double phaseLsdIn = ZXP(phaseLsd);
+        double phase = phaseMsdIn + phaseLsdIn;
 		LOOP_BODY_4(i)
 	}
 }
 
 void SuperBufRd_next_2(SuperBufRd *unit, int inNumSamples)
 {
-    float *phaseInt = ZIN(1);
-    float *phaseDec = ZIN(2);
+    float *phaseMsd = ZIN(1);
+    float *phaseLsd = ZIN(2);
 	int32 loop     = (int32)ZIN0(3);
 
 	GET_BUF_SHARED
@@ -818,18 +802,17 @@ void SuperBufRd_next_2(SuperBufRd *unit, int inNumSamples)
 	double loopMax = (double)(loop ? bufFrames : bufFrames - 1);
 
 	for (int i=0; i<inNumSamples; ++i) {
-        float phaseIntIn = ZXP(phaseInt);
-        double phaseDecDub = ZXP(phaseDec);
-        double phaseIntDub = (double)(*reinterpret_cast<int32*>(&phaseIntIn));
-        double phase = phaseIntDub + phaseDecDub;
+        double phaseMsdIn = ZXP(phaseMsd);
+        double phaseLsdIn = ZXP(phaseLsd);
+        double phase = phaseMsdIn + phaseLsdIn;
 		LOOP_BODY_2(i)
 	}
 }
 
 void SuperBufRd_next_1(SuperBufRd *unit, int inNumSamples)
 {
-    float *phaseInt = ZIN(1);
-    float *phaseDec = ZIN(2);
+    float *phaseMsd = ZIN(1);
+    float *phaseLsd = ZIN(2);
 	int32 loop     = (int32)ZIN0(3);
 
 	GET_BUF_SHARED
@@ -840,10 +823,9 @@ void SuperBufRd_next_1(SuperBufRd *unit, int inNumSamples)
 	double loopMax = (double)(loop ? bufFrames : bufFrames - 1);
 
 	for (int i=0; i<inNumSamples; ++i) {
-        float phaseIntIn = ZXP(phaseInt);
-        double phaseDecDub = ZXP(phaseDec);
-        double phaseIntDub = (double)(*reinterpret_cast<int32*>(&phaseIntIn));
-        double phase = phaseIntDub + phaseDecDub;
+        double phaseMsdIn = ZXP(phaseMsd);
+        double phaseLsdIn = ZXP(phaseLsd);
+        double phase = phaseMsdIn + phaseLsdIn;
 		LOOP_BODY_1(i)
 	}
 }
@@ -885,8 +867,11 @@ void SuperBufFrames_Ctor(BufInfoUnit *unit, int inNumSamples);
 void SuperBufFrames_next(BufInfoUnit *unit, int inNumSamples)
 {
 	SIMPLE_GET_BUF_SHARED
-    int32 framesInt = (int32)buf->frames;
-    ZOUT0(0) = *reinterpret_cast<float*>(&framesInt);
+    double frames = buf->frames;
+    float msd = (float)frames;
+    float lsd = (float)(frames - msd);
+    ZOUT0(0) = msd;
+    ZOUT0(1) = lsd;
 }
 
 void SuperBufFrames_Ctor(BufInfoUnit *unit, int inNumSamples)
@@ -895,8 +880,12 @@ void SuperBufFrames_Ctor(BufInfoUnit *unit, int inNumSamples)
 	CTOR_GET_BUF
 	unit->m_fbufnum = fbufnum;
 	unit->m_buf = buf;
-    int32 framesInt = (int32)buf->frames;
-    ZOUT0(0) = *reinterpret_cast<float*>(&framesInt);
+
+    double frames = buf->frames;
+    float msd = (float)frames;
+    float lsd = (float)(frames - msd);
+    ZOUT0(0) = msd;
+    ZOUT0(1) = lsd;
 }
 
 

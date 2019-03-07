@@ -139,57 +139,11 @@ SuperPlayBufX {
     }
 }
 
-SuperIndex {
-    var sampleNum, sampleRate;
-
-    *new { arg sampleNum=0, sampleRate;
-        sampleRate = sampleRate ? Server.default.sampleRate;
-        sampleRate = sampleRate ? 44100;
-        ^super.newCopyArgs(sampleNum, sampleRate);
-    }
-
-    *fromSecs { arg secs=0, sampleRate;
-        sampleRate = sampleRate ? Server.default.sampleRate;
-        sampleRate = sampleRate ? 44100;
-        ^super.newCopyArgs(secs * sampleRate, sampleRate);
-    }
-
-    *fromPair { arg pair, sampleRate;
-        sampleRate = sampleRate ? Server.default.sampleRate;
-        sampleRate = sampleRate ? 44100;
-        ^super.newCopyArgs(pair[0].as32Bits + pair[1], sampleRate);
-    }
-
-    asSecs { ^(sampleNum / sampleRate) }
-
-    asDouble { ^sampleNum }
-
-    asPair {
-        var numIntAsFloat = Float.from32Bits(floor(sampleNum));
-        var numDec = sampleNum - floor(sampleNum);
-        ^[numIntAsFloat, numDec];
-    }
-
-    asArray { ^this.asPair }
-
-    asUGenInput { ^this.asPair }
-    asOSCArgEmbeddedArray { | array|
-		array = array.add($[);
-		this.asPair.do{ | e | array = e.asOSCArgEmbeddedArray(array) };
-		^array.add($])
-	}
-
-    printOn { arg stream;
-		stream << this.class.name << "(" <<* [sampleNum, sampleRate] <<")"
-	}
-
-}
-
 + Buffer {
     atSec { arg secs;
-        ^SuperIndex(min(secs * sampleRate, numFrames), sampleRate);
+        ^SuperPair.fromDouble(min(secs * sampleRate, numFrames));
     }
-    atPair { arg pair;
-        ^SuperIndex.fromPair(pair, sampleRate);
+    atPair { arg a, b;
+        ^SuperPair(a, b).asFloat / sampleRate;
     }
 }

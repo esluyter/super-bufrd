@@ -91,7 +91,7 @@ SuperBufFrames : MultiOutUGen {
 }
 
 
-SuperPlayBuf {
+SuperPlayBuf : MultiOutUGen{
     *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
         var pos;
         end = end ? SuperBufFrames.kr(bufnum);
@@ -100,12 +100,19 @@ SuperPlayBuf {
         ^SuperBufRd.ar(numChannels, bufnum, pos, 0, quality);
     }
 
-    *arDetails { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
-        var pos, isPlaying;
-        end = end ? SuperBufFrames.kr(bufnum);
-        rate = BufRateScale.kr(bufnum) * rate;
-        # pos, isPlaying = SuperPhasor.arDetails(trig, rate, start, end, reset, loop);
-        ^[SuperBufRd.ar(numChannels, bufnum, pos, 0, quality), pos, isPlaying];
+    *arDetails{arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
+      ^this.multiNew(
+			   numChannels,bufnum,rate,trig,reset,start,end,loop,quality
+      )
+    }
+
+    // only called by arDetails
+    *new1 { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
+          var pos, isPlaying;
+          end = end ? SuperBufFrames.kr(bufnum);
+          rate = BufRateScale.kr(bufnum) * rate;
+          # pos, isPlaying = SuperPhasor.arDetails(trig, rate, start, end, reset, loop);
+          ^[SuperBufRd.ar(numChannels, bufnum, pos, 0, quality), pos, isPlaying];
     }
 }
 

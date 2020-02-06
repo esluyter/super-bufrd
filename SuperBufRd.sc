@@ -146,6 +146,120 @@ SuperPlayBufX {
     }
 }
 
+
+// copied from wslib, then adapted
+// fades (single) on loop points +
+// crossfades (dual) on trigger
+
+SuperPlayBufCF : MultiOutUGen{
+	// dual play buf which crosses from 1 to the other at trigger
+	*ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, n = 2;
+		^this.multiNew(
+			numChannels,bufnum,rate,trig,
+			reset,start,end,loop,quality,fadeTime,n
+		)
+	}
+
+	*arDetails{arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, n = 2;
+		^this.multiNew(
+			numChannels,bufnum,rate,trig,
+			reset,start,end,loop,quality,fadeTime,n,true
+		)
+	}
+
+	*new1 { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, n = 2, details=false;
+
+		var index, method = \ar, on, fadeTimeR;
+
+		switch ( trig.rate,
+			\audio, {
+				index = Stepper.ar( trig, 0, 0, n-1 );
+			},
+			\control, {
+				index = Stepper.kr( trig, 0, 0, n-1 );
+				method = \kr;
+			},
+			\demand, {
+				trig = TDuty.ar( trig ); // audio rate precision for demand ugens
+				index = Stepper.ar( trig, 0, 0, n-1 );
+			},
+			{ ^this.prMakeFadingPlayBuf( numChannels, bufnum, rate, trig, reset,start, end, loop, quality, fadeTime, details ) } // bypass
+		);
+
+		on = n.collect({ |i|
+			//on = (index >= i) * (index <= i); // more optimized way?
+			InRange.perform( method, index, i-0.5, i+0.5 );
+		});
+
+		switch ( rate.rate,
+			\demand,  {
+				rate = on.collect({ |on, i|
+					Demand.perform( method, on, 0, rate );
+				});
+			},
+			\control, {
+				rate = on.collect({ |on, i|
+					Gate.kr( rate, on ); // hold rate at crossfade
+				});
+			},
+			\audio, {
+				rate = on.collect({ |on, i|
+					Gate.ar( rate, on );
+				});
+			},
+			{
+				rate = rate.asCollection;
+			}
+		);
+
+		if( start.rate == \demand ) {
+			start = Demand.perform( method, trig, 0, start )
+		};
+
+		fadeTimeR = 1/fadeTime.asArray.wrapExtend(2);
+		if(details){
+			var players, pos;
+			#players, pos =
+				this.prMakeFadingPlayBuf(
+					numChannels, bufnum, rate, on,
+					reset,start, end, loop, quality, fadeTime, true
+				);
+			players = Mix(players
+				* Slew.perform( method, on, fadeTimeR[0], fadeTimeR[1] ).sqrt
+			);
+			pos = Select.kr(on[1],pos);
+			^[players,pos];
+		}{
+			^Mix(
+				this.prMakeFadingPlayBuf( numChannels, bufnum, rate, on, reset,start, end, loop, quality, fadeTime )
+				* Slew.perform( method, on, fadeTimeR[0], fadeTimeR[1] ).sqrt
+			);
+		}
+
+	}
+
+
+	*prMakeFadingPlayBuf{arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.1, details=false;
+        var pos,pos_f,fade_f,loop_fade,end_f,player;
+        end = end ? SuperBufFrames.kr(bufnum);
+		end_f = end.asFloat;
+        rate = BufRateScale.kr(bufnum) * rate;
+        pos = SuperPhasor.ar(trig, rate, start, end, reset, loop);
+		pos_f = pos.asFloat;
+		fade_f = fadeTime * BufSampleRate.ir(bufnum) / rate;
+		loop_fade = pos_f.linlin(start,start+fade_f,0,1)*pos_f.linlin(end_f-fade_f,end_f,1,0);
+		player = SuperBufRd.ar(numChannels, bufnum, pos, 0, quality)*loop_fade;
+		if(details){
+			^[player,pos_f]
+		}{
+			^player
+		};
+
+	}
+
+}
+
+
 + Buffer {
     atSec { arg secs;
         ^SuperPair.fromDouble(min(secs * sampleRate, numFrames));

@@ -1,7 +1,5 @@
-set(FILENAME "SuperBufRd.cpp") #specify the .cpp file here
 cmake_minimum_required (VERSION 2.8)
-get_filename_component(PROJECT ${FILENAME} NAME_WE) #automatically sets project name from the filename
-# set(PROJECT "my_name") #alternatively set project name manually
+set(PROJECT "SuperBufRd") # set project name manually
 message(STATUS "Project name is ${PROJECT}")
 project (${PROJECT})
 
@@ -81,9 +79,13 @@ if(MINGW)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mstackrealign")
 endif()
 
-add_library(${PROJECT} MODULE ${FILENAME})
+add_library("SuperBufRd" MODULE "SuperBufRd.cpp")
+add_library("SuperPoll" MODULE "SuperPoll.cpp")
 if(SUPERNOVA)
-    add_library(${PROJECT}_supernova MODULE ${FILENAME})
-    set_property(TARGET ${PROJECT}_supernova
+    add_library("SuperBufRd_supernova" MODULE "SuperBufRd.cpp")
+    add_library("SuperPoll_supernova" MODULE "SuperPoll.cpp")
+    set_property(TARGET "SuperBufRd_supernova"
+                 PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
+    set_property(TARGET "SuperPoll_supernova"
                  PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
 endif()

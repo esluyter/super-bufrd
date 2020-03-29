@@ -1,4 +1,4 @@
-SuperPair {
+SuperPair : AbstractFunction {
     var msd, lsd;
 
     *new { arg msd, lsd;
@@ -6,42 +6,30 @@ SuperPair {
     }
 
     *fromDouble { arg double = 0.0;
-        var msd = Float.from32Bits(double.as32Bits);
-        var lsd = Float.from32Bits((double - msd).as32Bits);
+        var msd, lsd;
+        double = double.asFloat;
+        msd = Float.from32Bits(double.as32Bits);
+        lsd = Float.from32Bits((double - msd).as32Bits);
         ^super.newCopyArgs(msd, lsd);
     }
 
-    asFloat {
-        if (this.isUGen) {
-            "Cannot convert UGen to Float".postln;
-        } {
-            ^(msd + lsd);
-        };
-    }
+    // asFloat can cause precision loss
+    // only when the resulting double is feeded into a UGen
+    asFloat { ^(msd + lsd) }
 
-    asPair {
-        ^this;
-    }
+    asArray { ^[msd, lsd] }
 
-    asArray {
-        ^[msd, lsd];
-    }
+    asPair { ^this }
+    asBig { ^this }
 
-    asBig {
-        ^this;
-    }
-
-    asOSCArgEmbeddedArray { | array|
-		    array = array.add($[);
-		    this.asArray.do{ | e | array = e.asOSCArgEmbeddedArray(array) };
-		    ^array.add($])
+    asOSCArgEmbeddedArray { arg array;
+        array = array.add($[);
+        this.asArray.do{ | e | array = e.asOSCArgEmbeddedArray(array) };
+        ^array.add($])
     }
 
     isUGen {
-        if (msd.isUGen or: lsd.isUGen) {
-            ^true;
-        };
-        ^false;
+        ^(msd.isUGen or: lsd.isUGen)
     }
 
     poll { arg trig = 10, label, trigid = -1;
@@ -52,12 +40,49 @@ SuperPair {
         ^this.poll(trig, label, trigid);
     }
 
-    + { arg something;
-        if (this.isUGen or: something.isUGen) {
-            "UGen SuperPair addition not yet implemented".postln;
-            ^this;
-        } {
-            ^SuperPair.fromDouble(this.asFloat + something.asFloat);
+
+    composeUnaryOp { arg aSelector;
+        ^if(this.isUGen){
+            thisMethod.notYetImplemented
+        }{
+            SuperPair.fromDouble(UnaryOpFunction.new(aSelector, this.asFloat).value)
+        }
+    }
+
+    composeBinaryOp { arg aSelector, something, adverb;
+        ^if(this.isUGen || something.isUGen){
+            SuperBinaryOpUGen(aSelector,this,something)
+        }{
+            SuperPair.fromDouble(
+              BinaryOpFunction.new(aSelector, this.asFloat, something, adverb).value
+            )
+        }
+    }
+    reverseComposeBinaryOp { arg aSelector, something, adverb;
+        ^if(this.isUGen || something.isUGen){
+            SuperBinaryOpUGen(aSelector,something,this)
+        }{
+            SuperPair.fromDouble(
+              BinaryOpFunction.new(aSelector, something, this.asFloat, adverb).value
+            )
+        }
+    }
+
+    composeNAryOp { arg aSelector, anArgList;
+        ^if(this.isUGen){
+            ^thisMethod.notYetImplemented
+        }{
+            SuperPair.fromDouble(
+              NAryOpFunction.new(aSelector, this.asFloat, anArgList).value
+            )
+        }
+    }
+
+    if { arg trueUGen, falseUGen;
+        ^if(this.isUGen){
+            (this * (trueUGen - falseUGen)) + falseUGen;
+        }{
+            Error("Non Boolean in test").throw
         }
     }
 }
@@ -84,4 +109,80 @@ SuperPoll : UGen {
         inputs = theInputs;
         //^this.initOutputs(2, rate);
     }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+SuperBinaryOpUGen : BasicOpUGen {
+
+  var <channels;
+
+    *new { arg selector, a, b;
+        ^this.multiNewList(['audio', selector] ++ a.asPair.asArray ++ b.asPair.asArray);
+    }
+
+  determineRate { arg msdA, lsdA, msdB, lsdB;
+    if (msdA.rate == \demand, { ^\demand });
+    if (lsdA.rate == \demand, { ^\demand });
+    if (msdB.rate == \demand, { ^\demand });
+    if (lsdB.rate == \demand, { ^\demand });
+    if (msdA.rate == \audio, { ^\audio });
+    if (lsdA.rate == \audio, { ^\audio });
+    if (msdB.rate == \audio, { ^\audio });
+    if (lsdB.rate == \audio, { ^\audio });
+    if (msdA.rate == \control, { ^\control });
+    if (lsdA.rate == \control, { ^\control });
+    if (msdB.rate == \control, { ^\control });
+    if (lsdB.rate == \control, { ^\control });
+    ^\scalar
+  }
+
+  *new1 { arg rate, selector, msdA, lsdA, msdB, lsdB;
+
+    // eliminate degenerate cases
+    if (selector == '*') {
+      if ((msdA == 0.0) && (lsdA == 0.0), { ^0.0 });
+      if ((msdB == 0.0) && (lsdB == 0.0), { ^0.0 });
+      if ((msdA+lsdA) == 1.0 ) { ^SuperPair(msdB,lsdB) };
+      if ((msdA+lsdA) == -1.0 ) { ^SuperPair(msdB,lsdB).neg };
+      if ((msdB+lsdB) == 1.0 ) { ^SuperPair(msdA,lsdA) };
+      if ((msdB+lsdB) == -1.0 ) { ^SuperPair(msdA,lsdA).neg };
+    }{
+    if (selector == '+') {
+      if ((msdA == 0.0) && (lsdA == 0.0)) { ^SuperPair(msdB,lsdB) };
+      if ((msdB == 0.0) && (lsdB == 0.0)) { ^SuperPair(msdA,lsdA) };
+    }{
+    if (selector == '-') {
+      if ((msdA == 0.0) && (lsdA == 0.0)) { ^SuperPair(msdB,lsdB).neg };
+      if ((msdB == 0.0) && (lsdB == 0.0)) { ^SuperPair(msdA,lsdA) };
+    }{
+    if (selector == '/') {
+      if ((msdB+lsdB) == 1.0 ) { ^SuperPair(msdA,lsdA) };
+      if ((msdB+lsdB) == -1.0 ) { ^SuperPair(msdA,lsdA).neg };
+    }}}};
+
+
+    ^super.new1(rate, selector, msdA, lsdA, msdB, lsdB)
+  }
+
+  init { arg theOperator, msdA, lsdA, msdB, lsdB;
+    this.operator = theOperator;
+    rate = this.determineRate( msdA, lsdA, msdB, lsdB );
+    inputs = [ msdA, lsdA, msdB, lsdB ];
+    channels = {|i| OutputProxy(rate, this, i)}!2;
+    inputs.postln;
+    rate.postln;
+    ^SuperPair(*channels)
+  }
+
+  numOutputs { ^2 }
+  writeOutputSpecs { arg file;
+    channels.do({ arg output; output.writeOutputSpec(file); });
+  }
+  synthIndex_ { arg index;
+    synthIndex = index;
+    channels.do({ arg output; output.synthIndex_(index); });
+  }
+
 }

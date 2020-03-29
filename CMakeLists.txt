@@ -81,11 +81,15 @@ endif()
 
 add_library("SuperBufRd" MODULE "SuperBufRd.cpp")
 add_library("SuperPoll" MODULE "SuperPoll.cpp")
+add_library("SuperBinaryOpUGen" MODULE "SuperBinaryOpUGen.cpp")
 if(SUPERNOVA)
     add_library("SuperBufRd_supernova" MODULE "SuperBufRd.cpp")
     add_library("SuperPoll_supernova" MODULE "SuperPoll.cpp")
+    add_library("SuperBinaryOpUGen_supernova" MODULE "SuperBinaryOp.cpp")
     set_property(TARGET "SuperBufRd_supernova"
                  PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
     set_property(TARGET "SuperPoll_supernova"
+                 PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
+    set_property(TARGET "SuperBinaryOpUGen_supernova"
                  PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
 endif()

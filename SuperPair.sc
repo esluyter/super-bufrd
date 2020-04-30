@@ -13,10 +13,9 @@ SuperPair {
 
     asFloat {
         if (this.isUGen) {
-            "Cannot convert UGen to Float".postln;
-        } {
-            ^(msd + lsd);
-        };
+            "SuperPair UGen .asFloat loses double precision".warn;
+        }
+        ^(msd + lsd);
     }
 
     asPair {

@@ -152,28 +152,37 @@ SuperPlayBufX {
 // crossfades (dual) on trigger
 
 SuperPlayBufCF : MultiOutUGen{
+
+    classvar <fadeFuncs;
+    *initClass {
+        fadeFuncs = Dictionary[
+            \linear-> #{|x|x},
+            \equal -> #{|x|sin(x*pi/2)},
+            \sqrt  -> #{|x|sqrt(x)}
+        ]
+    }
 	// dual play buf which crosses from 1 to the other at trigger
-	*ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, n = 2;
+    *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, fadeFunc=\sqrt, n= 2;
 		^this.multiNew(
 			numChannels,bufnum,rate,trig,
-			reset,start,end,loop,quality,fadeTime,n
+			reset,start,end,loop,quality,fadeTime,fadeFunc,n
 		)
 	}
 
-	*arDetails{arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, n = 2;
+	*arDetails{arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, fadeFunc=\sqrt, n = 2;
 		^this.multiNew(
 			numChannels,bufnum,rate,trig,
-			reset,start,end,loop,quality,fadeTime,n,true
+			reset,start,end,loop,quality,fadeTime,fadeFunc,n,true
 		)
 	}
 
-	*new1 { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, n = 2, details=false;
+	*new1 { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2,fadeTime=0.1, fadeFunc=\sqrt, n = 2, details=false;
 
 		var index, method = \ar, on, fadeTimeR;
 
 		switch ( trig.rate,
 			\audio, {
-				index = Stepper.ar( trig, 0, 0, n-1 );
+                index = Stepper.ar( trig, 0, 0, n-1 );
 			},
 			\control, {
 				index = Stepper.kr( trig, 0, 0, n-1 );
@@ -185,6 +194,13 @@ SuperPlayBufCF : MultiOutUGen{
 			},
 			{ ^this.prMakeFadingPlayBuf( numChannels, bufnum, rate, trig, reset,start, end, loop, quality, fadeTime, details ) } // bypass
 		);
+
+        if(fadeFunc.isSymbol){
+            fadeFunc = this.fadeFuncs[fadeFunc];
+        };
+        if(fadeFunc.isFunction.not){
+            fadeFunc = this.fadeFuncs[\sqrt];
+        };
 
 		on = n.collect({ |i|
 			//on = (index >= i) * (index <= i); // more optimized way?
@@ -216,7 +232,7 @@ SuperPlayBufCF : MultiOutUGen{
 			start = Demand.perform( method, trig, 0, start )
 		};
 
-		fadeTimeR = 1/fadeTime.asArray.wrapExtend(2);
+		fadeTimeR = fadeTime.reciprocal;
 		if(details){
 			var players, pos;
 			#players, pos =
@@ -224,15 +240,18 @@ SuperPlayBufCF : MultiOutUGen{
 					numChannels, bufnum, rate, on,
 					reset,start, end, loop, quality, fadeTime, true
 				);
-			players = Mix(players
-				* Slew.perform( method, on, fadeTimeR[0], fadeTimeR[1] ).sqrt
-			);
+			players = Mix(
+                players * fadeFunc.value(Slew.perform( method, index, fadeTimeR, fadeTimeR ))
+            );
 			pos = Select.kr(on[1],pos);
 			^[players,pos];
 		}{
+
 			^Mix(
 				this.prMakeFadingPlayBuf( numChannels, bufnum, rate, on, reset,start, end, loop, quality, fadeTime )
-				* Slew.perform( method, on, fadeTimeR[0], fadeTimeR[1] ).sqrt
+                * fadeFunc.value(
+                    Slew.perform(method, on, fadeTimeR, fadeTimeR)
+                )
 			);
 		}
 

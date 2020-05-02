@@ -143,67 +143,25 @@ if (isOverlapping) { \
 outPlaying[i] = (playing == 0); \
 
 #define SP_INCREMENT_POS \
-if (pos >= end) { \
-    if (loop) { \
-        while (pos >= end) { \
-            pos = pos - end + start; \
-        } \
-        playing = 0; \
-    } else { \
-        pos = end; \
-        playing = 1; \
-    } \
-} \
-if (pos <= start) { \
-    if (loop) { \
-        while (pos < start) { \
-            pos = pos - start + end; \
-        } \
-        playing = 0; \
-    } else { \
-        pos = start; \
-        playing = -1; \
-    } \
-} \
-if (playing == -1 && (rate > 0 || start < pos)) { \
-    playing = 0; \
-} \
-if (playing == 1 && (rate < 0 || end > pos)) { \
-    playing = 0; \
-} \
-if (playing == 0) { \
-    pos += rate; \
-} \
+playing = 0; \
+if(loop){ \
+  pos = sc_wrap(pos + rate, start, end); \
+} else { \
+  pos += rate; \
+  if(pos < start){ pos = start; playing = -1; } \
+  if(pos > end){ pos = end; playing = 1; } \
+}\
+
 
 #define SPX_INCREMENT_POS \
-if (loop) { \
-    playing = 0; \
-} \
-if (playing == -1 && (rate > 0 || start < pos)) { \
-    playing = 0; \
-} \
-if (playing == 1 && (rate < 0 || end > pos)) { \
-    playing = 0; \
-} \
-if (playing == 0) { \
-    pos += rate; \
-} \
-if (loop) { \
-    while (pos >= (end - overlap)) { \
-        pos = pos - (end - overlap) + start; \
-    } \
-    while (pos < start) { \
-        pos = pos - start + (end - overlap); \
-    } \
+playing = 0; \
+if(loop){ \
+  pos = sc_wrap(pos + rate, start, end); \
 } else { \
-    if (pos >= end) { \
-        pos = end; \
-        playing = 1; \
-    } else if (pos <= start) { \
-        pos = start; \
-        playing = -1; \
-    } \
-} \
+  pos += rate; \
+  if(pos < start){ pos = start; playing = -1; } \
+  if(pos > end){ pos = end; playing = 1; } \
+}\
 if (firstTime && pos > overlap) { \
     firstTime = 0; \
 } \

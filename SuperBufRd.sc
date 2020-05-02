@@ -240,14 +240,15 @@ SuperPlayBufCF : MultiOutUGen{
 
 
 	*prMakeFadingPlayBuf{arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.1, details=false;
-        var pos,pos_f,fade_f,loop_fade,end_f,player;
+        var pos,pos_f,fade_f,loop_fade,start_f,end_f,player;
+        start_f = start.asFloat;
         end = end ? SuperBufFrames.kr(bufnum);
 		end_f = end.asFloat;
         rate = BufRateScale.kr(bufnum) * rate;
         pos = SuperPhasor.ar(trig, rate, start, end, reset, loop);
 		pos_f = pos.asFloat;
 		fade_f = fadeTime * BufSampleRate.ir(bufnum) / rate;
-		loop_fade = pos_f.linlin(start,start+fade_f,0,1)*pos_f.linlin(end_f-fade_f,end_f,1,0);
+		loop_fade = pos_f.linlin(start_f,start_f+fade_f,0,1)*pos_f.linlin(end_f-fade_f,end_f,1,0);
 		player = SuperBufRd.ar(numChannels, bufnum, pos, 0, quality)*loop_fade;
 		if(details){
 			^[player,pos_f]

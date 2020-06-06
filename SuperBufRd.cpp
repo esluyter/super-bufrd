@@ -103,7 +103,7 @@ float posLsd = (float)(pos - posMsd); \
 phase0Msd[i] = posMsd; \
 phase0Lsd[i] = posLsd; \
 if (loop && pos < overlap && !firstTime) { \
-    double endPos = pos + end - overlap; \
+    double endPos = pos + end; \
     posMsd = (float)endPos; \
     posLsd = (float)(endPos - posMsd); \
     phase1Msd[i] = posMsd; \
@@ -120,7 +120,7 @@ if (isOverlapping) { \
     phase2Msd[i] = posMsd; \
     phase2Lsd[i] = posLsd; \
     if (loop && oldPos < overlap) { \
-        double endOldPos = oldPos + end - overlap; \
+        double endOldPos = oldPos + end; \
         posMsd = (float)endOldPos; \
         posLsd = (float)(endOldPos - posMsd); \
         phase3Msd[i] = posMsd; \
@@ -166,28 +166,16 @@ if (firstTime && pos > overlap) { \
     firstTime = 0; \
 } \
 if (isOverlapping) { \
-    if (oldPlaying == 0) { \
-        oldPos += rate; \
-    } \
     overlapPos += 1; \
     if (overlapPos >= overlap) { \
         isOverlapping = 0; \
     } \
     if (loop) { \
-        while (oldPos >= (end - overlap)) { \
-            oldPos = oldPos - (end - overlap) + start; \
-        } \
-        while (oldPos < start) { \
-            oldPos = oldPos - start + (end - overlap); \
-        } \
+        oldPos = sc_wrap(oldPos + rate, start, end); \
     } else { \
-        if (oldPos >= end) { \
-            oldPos = end; \
-            oldPlaying = 1; \
-        } else if (oldPos <= start) { \
-            oldPos = start; \
-            oldPlaying = -1; \
-        } \
+        oldPos += rate; \
+        if(oldPos < start){ pos = start; playing = -1; } \
+        if(oldPos > end){ pos = end; playing = 1; } \
     } \
 } \
 

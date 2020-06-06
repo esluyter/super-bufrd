@@ -43,6 +43,10 @@ SuperPair {
         ^false;
     }
 
+    rate {
+        ^msd.rate;
+    }
+
     poll { arg trig = 10, label, trigid = -1;
         ^SuperPoll.ar(trig, this, label, trigid);
     }
@@ -72,6 +76,14 @@ SuperPoll : UGen {
         this.multiNew('control', trig, value, label, trigid);
         ^value;
     }
+    *new { arg trig, in, label, trigid = -1;
+        // TODO: fix multichannel expansion rates -- requires fixing SuperPair:asArray
+        //var rate = in.asArray.collect(_.rate).unbubble;
+        //this.multiNewList([rate, trig, in, label, trigid]);
+        var rate = in.rate;
+        this.multiNewList([rate, trig, in, label, trigid]);
+        ^in;
+    }
     *new1 { arg rate, trig, value, label, trigid;
         var valueArr = value.asPair.asArray;
         label = label ?? { "%".format(value.class) };
@@ -82,5 +94,21 @@ SuperPoll : UGen {
     init { arg theInputs;
         inputs = theInputs;
         //^this.initOutputs(2, rate);
+    }
+}
+
+////////////////////////////////////////////////////////////////////
+
++ Array {
+    poll { |trig = 10, label, trigid = -1|
+        if (label.isNil) {
+            label = this.size.collect{ |index| "UGen Array [%]".format(index).asSymbol }
+        };
+        trig = trig.asArray;
+        label = label.asArray;
+        trigid = trigid.asArray;
+        ^this.collect { |item, i|
+            item.poll(trig.wrapAt(i), label.wrapAt(i), trigid.wrapAt(i));
+        };
     }
 }

@@ -1,4 +1,17 @@
-SuperPhasor : MultiOutUGen {
+SuperUGen : MultiOutUGen {
+  checkValidInputs {
+		inputs.do({arg in,i;
+			var argName;
+			if(in.isValidUGenInput.not and: (in.class !== SuperPair),{
+				argName = this.argNameForInputAt(i) ? i;
+				^"arg: '" ++ argName ++ "' has bad input:" + in;
+			})
+		});
+		^nil
+	}
+}
+
+SuperPhasor : SuperUGen {
     *ar { arg trig=0, rate=1, start=0, end=48000, reset=0, loop=1;
         ^this.multiNew('audio', trig, rate, start, end, reset, loop, false);
     }
@@ -23,7 +36,7 @@ SuperPhasor : MultiOutUGen {
     }
 }
 
-SuperPhasorX : MultiOutUGen {
+SuperPhasorX : SuperUGen {
     *ar { arg trig=0, rate=1, start=0, end=48000, reset=0, loop=1, overlap=5;
         ^this.multiNew('audio', trig, rate, start, end, reset, loop, overlap)
     }
@@ -42,7 +55,7 @@ SuperPhasorX : MultiOutUGen {
     }
 }
 
-SuperBufRd : MultiOutUGen {
+SuperBufRd : SuperUGen {
     *ar { arg numChannels=1, bufnum=0, phase=0, loop=1, quality=2;
         ^this.multiNew('audio', numChannels, bufnum, phase, loop, quality)
     }
@@ -67,7 +80,7 @@ SuperBufRd : MultiOutUGen {
 	}
 }
 
-SuperBufFrames : MultiOutUGen {
+SuperBufFrames : SuperUGen {
     *kr { arg bufnum;
 		^this.multiNew('control', bufnum)
 	}
@@ -91,7 +104,7 @@ SuperBufFrames : MultiOutUGen {
 }
 
 
-SuperPlayBuf : MultiOutUGen{
+SuperPlayBuf : SuperUGen {
     *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
         var pos;
         end = end ? SuperBufFrames.kr(bufnum);
@@ -116,7 +129,7 @@ SuperPlayBuf : MultiOutUGen{
     }
 }
 
-SuperPlayBufX {
+SuperPlayBufX : SuperUGen {
     *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.01;
         var phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing;
         var sig0, sig1, sig2, sig3, sig;
@@ -151,7 +164,7 @@ SuperPlayBufX {
 // fades (single) on loop points +
 // crossfades (dual) on trigger
 
-SuperPlayBufCF : MultiOutUGen{
+SuperPlayBufCF :  SuperUGen{
 
     classvar <fadeFuncs;
     *initClass {

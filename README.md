@@ -3,11 +3,11 @@ UGens for accessing long buffers with subsample accuracy:
 - **SuperBufRd** A modification of BufRd to be able to access samples with double precision
 - **SuperPhasor** A new phasor UGen to drive a SuperBufRd
 - **SuperPhasorX** A new phasor UGen to drive multiple SuperBufRds with crossfading to allow for click-free looping and position jumping
-- **SuperBufFrames** A modification of BufFrames
-- **SuperIndex** A sclang class to communicate position information with these UGens
+- **SuperPair** A sclang class to communicate position information with these UGens
 - **SuperPlayBuf** A pseudo-ugen wrapper around a SuperPhasor and SuperBufRd, similar to PlayBuf
 - **SuperPlayBufDetails** Same thing but outputs the phasor information as well as audio signal
 - **SuperPlayBufX** / **SuperPlayBufXDetails** Like SuperPlayBuf/SuperPlayBufDetails but offers crossfading at loop points and on jumping to a new position
+- **SuperBufFrames** A modification of BufFrames
 
 [Full spec / documentation of classes here](https://gist.github.com/esluyter/53597bed464d16fdb603c9db8405e3a9)
 
@@ -19,10 +19,12 @@ This implementation is a work in progress. If you find bugs or have feature requ
 ~buf = Buffer.read(s, "path/to/long/soundfile.wav", action: { "OK, loaded!".postln });
 
 // wait for buffer to load then play it on a loop, mouse controls speed from 5x forward to 5x in reverse
-x = { |t_trig=0, pos=#[0,0]| SuperPlayBufX.ar(2, ~buf, MouseX.kr(-5, 5), cuePos:pos, cueTrig:t_trig) }.play;
+x = {
+  SuperPlayBufX.ar(1, ~buf, MouseX.kr(-5, 5), \trig.tr(0), start:\pos.skr(0).poll)
+}.play;
 
 // jump to a certain position in seconds:
-x.set(\pos, ~buf.atSec(230.704), \t_trig, 1);
+x.set(\pos, ~buf.atSec(230.704), \trig, 1);
 ```
 
 ## More elaborate example with playhead
@@ -31,31 +33,28 @@ x.set(\pos, ~buf.atSec(230.704), \t_trig, 1);
 
 (
 ~synth = {
-  var cuePos = \cuePos.kr([0, 0]);
-  var cueTrig = \cueTrig.tr(0);
-  var rate = MouseX.kr(-12, 12);
-  var lpf_freq = rate.abs.linlin(1, 3, 20000, 5000); // make fast forward less grating on ears
-  var sig, playhead, isPlaying;
-  #sig, playhead, isPlaying = SuperPlayBufXDetails.ar(2, ~buf, rate, cuePos: cuePos, cueTrig: cueTrig);
-  SendTrig.ar(Impulse.ar(10), 0, playhead[0]); // send integer component of playhead
-  LPF.ar(sig, lpf_freq);
+    var pos = \pos.skr(0);
+    var trig = \trig.tr(0);
+    var rate = MouseX.kr(-12, 12);
+    var lpf_freq = rate.abs.linlin(1, 3, 20000, 5000); // make fast forward less grating on ears
+    var sig, playhead, isPlaying;
+    #sig, playhead, isPlaying = SuperPlayBufX.arDetails(2, ~buf, rate, trig, start: pos);
+    SendReply.ar(Impulse.ar(10), '/playhead', playhead.components); // send both components of playhead
+    LPF.ar(sig, lpf_freq);
 }.play;
 
 // print the elapsed time:
-OSCdef(\trig, { |msg|
-  if (msg[2] == 0) {
-    ("Start: %       Playhead: %       End: %".format(
-      0.asTimeString,
-      ~buf.atPair([msg[3], 0]).asSecs.asTimeString,
-      ~buf.duration.asTimeString)
+OSCdef(\playhead, { |msg|
+    ("Playhead: %       BufDur: %".format(
+        ~buf.atPair(*msg[3..4]).asTimeString,
+        ~buf.duration.asTimeString)
     ).postln;
-  };
-}, '/tr');
+}, '/playhead');
 )
 
-~synth.set(\cuePos, ~buf.atSec(60 * 10), \cueTrig, 1) // 10 minutes in
-~synth.set(\cuePos, ~buf.atSec(60 * 40), \cueTrig, 1) // 40 minutes in
-~synth.set(\cuePos, ~buf.atSec(60 * 60), \cueTrig, 1) // 1 hour in
+~synth.set(\pos, ~buf.atSec(60 * 10), \trig, 1) // 10 minutes in
+~synth.set(\pos, ~buf.atSec(60 * 40), \trig, 1) // 40 minutes in
+~synth.set(\pos, ~buf.atSec(60 * 60), \trig, 1) // 1 hour in
 ```
 
 ## Mac / Linux build instructions

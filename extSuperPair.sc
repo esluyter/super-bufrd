@@ -21,12 +21,12 @@
 
 + Symbol {
     skr { | val, lag, fixedLag = false, spec |
-        var expandedPairs = val.asCollection.collect{|v|v.asPair.asArray}.flat;
+        var expandedPairs = val.asArray.collect{|v|v.asPair.components}.flat;
         ^NamedControl.kr(this, expandedPairs, lag, fixedLag,spec)
         .clump(2).collect(SuperPair(*_)).unbubble
     }
     sar { | val, lag, fixedLag = false, spec |
-        var expandedPairs = val.asCollection.collect{|v|v.asPair.asArray}.flat;
+        var expandedPairs = val.asArray.collect{|v|v.asPair.components}.flat;
         ^NamedControl.ar(this, expandedPairs, lag, fixedLag,spec)
         .clump(2).collect(SuperPair(*_)).unbubble
     }

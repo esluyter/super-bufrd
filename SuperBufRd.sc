@@ -7,9 +7,9 @@ SuperPhasor : MultiOutUGen {
     }
     *new1 { arg ugen_rate, trig, rate, start, end, reset, loop, details;
         var msd, lsd, isPlaying;
-        start = start.asPair.asArray;
-        end = end.asPair.asArray;
-        reset = reset.asPair.asArray;
+        start = start.asPair.components;
+        end = end.asPair.components;
+        reset = reset.asPair.components;
         # msd, lsd, isPlaying = super.new.rate_(ugen_rate).addToSynth.init(([trig, rate] ++ start ++ end ++ reset ++ [loop]));
         if (details) {
             ^[SuperPair(msd, lsd), isPlaying];
@@ -29,9 +29,9 @@ SuperPhasorX : MultiOutUGen {
     }
     *new1 { arg ugen_rate, trig, rate, start, end, reset, loop, overlap;
         var msd0, lsd0, msd1, lsd1, pan0, msd2, lsd2, msd3, lsd3, pan1, pan2, isPlaying;
-        start = start.asPair.asArray;
-        end = end.asPair.asArray;
-        reset = reset.asPair.asArray;
+        start = start.asPair.components;
+        end = end.asPair.components;
+        reset = reset.asPair.components;
         # msd0, lsd0, msd1, lsd1, pan0, msd2, lsd2, msd3, lsd3, pan1, pan2, isPlaying = super.new.rate_(ugen_rate).addToSynth.init(([trig, rate] ++ start ++ end ++ reset ++ [loop, overlap]));
 
         ^[SuperPair(msd0, lsd0), SuperPair(msd1, lsd1), pan0, SuperPair(msd2, lsd2), SuperPair(msd3, lsd3), pan1, pan2, isPlaying];
@@ -47,7 +47,7 @@ SuperBufRd : MultiOutUGen {
         ^this.multiNew('audio', numChannels, bufnum, phase, loop, quality)
     }
     *new1 { arg rate, numChannels, bufnum, phase, loop, quality;
-        phase = phase.asPair.asArray;
+        phase = phase.asPair.components;
         ^super.new.rate_(rate).addToSynth.init(numChannels, [bufnum] ++ phase ++ [loop, quality]);
     }
 

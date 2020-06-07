@@ -18,29 +18,20 @@ SuperPair {
         ^(msd + lsd);
     }
 
-    asPair {
-        ^this;
-    }
+    asPair { ^this }
 
-    asArray {
+    asBig { ^this }
+
+    components {
         ^[msd, lsd];
     }
 
-    asBig {
-        ^this;
-    }
-
-    asOSCArgEmbeddedArray { | array|
-		    array = array.add($[);
-		    this.asArray.do{ | e | array = e.asOSCArgEmbeddedArray(array) };
-		    ^array.add($])
+    asOSCArgEmbeddedArray { arg array;
+		    ^this.components.asOSCArgEmbeddedArray(array)
     }
 
     isUGen {
-        if (msd.isUGen or: lsd.isUGen) {
-            ^true;
-        };
-        ^false;
+        ^(msd.isUGen or: lsd.isUGen)
     }
 
     rate {
@@ -85,7 +76,7 @@ SuperPoll : UGen {
         ^in;
     }
     *new1 { arg rate, trig, value, label, trigid;
-        var valueArr = value.asPair.asArray;
+        var valueArr = value.asPair.components;
         label = label ?? { "%".format(value.class) };
         label = label.asString.collectAs(_.ascii, Array);
         if (trig.isNumber) { trig = Impulse.multiNew(rate, trig, 0) };

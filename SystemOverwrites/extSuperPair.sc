@@ -1,7 +1,13 @@
 + SimpleNumber {
+
     asPair {
         var double = this.asFloat;
         ^SuperPair.fromDouble(double);
+    }
+
+    // useful for partial application
+    asPairComponents {
+        ^this.asPair.components;
     }
 
     asBig {
@@ -14,6 +20,11 @@
         ^SuperPair(this, 0.0)
     }
 
+    // useful for partial application
+    asPairComponents {
+        ^this.asPair.components;
+    }
+
     superPoll { arg trig = 10, label, trigid = -1;
         ^SuperPoll.ar(trig, this, label, trigid);
     }
@@ -21,18 +32,19 @@
 
 + Symbol {
     skr { | val, lag, fixedLag = false, spec |
-        var expandedPairs = val.asArray.collect{|v|v.asPair.components}.flat;
+        var expandedPairs = val.asArray.collect(_.asPairComponents).flat;
         ^NamedControl.kr(this, expandedPairs, lag, fixedLag,spec)
         .clump(2).collect(SuperPair(*_)).unbubble
     }
     sar { | val, lag, fixedLag = false, spec |
-        var expandedPairs = val.asArray.collect{|v|v.asPair.components}.flat;
+        var expandedPairs = val.asArray.collect(_.asPairComponents).flat;
         ^NamedControl.ar(this, expandedPairs, lag, fixedLag,spec)
         .clump(2).collect(SuperPair(*_)).unbubble
     }
 }
 
 + Array {
+
     superPoll { arg trig = 10, label, trigid = -1;
         if (label.isNil) { label = this.collect{ |thing, index| "Array [%] (%)".format(index, thing.class) }};
         ^SuperPoll.ar(trig, this, label, trigid);

@@ -1,5 +1,5 @@
 SuperPair : AbstractFunction {
-    var msd, lsd;
+    var <msd, <lsd;
 
     *new { arg msd=0, lsd=0;
         ^super.newCopyArgs(msd, lsd);

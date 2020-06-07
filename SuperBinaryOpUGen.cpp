@@ -624,13 +624,13 @@ static inline void DOUBLE_ZXPOUT(SuperBinaryOpUGen* unit, float* out0, float* ou
 }
 
 static inline void DOUBLE_ZCOPY(SuperBinaryOpUGen *unit, int inNumSamples, int i){
-  float *a=IN(i*2),*b=IN(i*2+1), *out0=OUT(0), *out1=OUT(1);
+  float *msd=IN(i*2),*lsd=IN(i*2+1), *out0=OUT(0), *out1=OUT(1);
 
   do{
-    double val = *(a++) + *(b++);
-    float msd = (float) val;
-    *(out0++) = msd;
-    *(out1++) = (float) (val-msd);
+    double val = static_cast<double>(*(msd++)) + static_cast<double>(*(lsd++));
+    float msd_out = (float) val;
+    *(out0++) = msd_out;
+    *(out1++) = (float) (val-msd_out);
   }while(--inNumSamples);
 }
 
@@ -639,7 +639,9 @@ template<typename Action>
 static void DOUBLE_LOOP1(SuperBinaryOpUGen* unit, int inNumSamples, Action action){
   float *a=IN(0),*b=IN(1),*c=IN(2),*d=IN(3), *out0=OUT(0), *out1=OUT(1);
   do{
-    double val = action(*(a++)+*(b++), *(c++)+*(d++));
+    double val = action(
+      static_cast<double>(*(a++))+static_cast<double>(*(b++)),
+      static_cast<double>(*(c++))+static_cast<double>(*(d++)));
     float msd = (float) val;
     *(out0++) = msd;
     *(out1++) = (float) (val-msd);
@@ -651,7 +653,9 @@ template<typename Action>
 static void DOUBLE_LOOP1_k(SuperBinaryOpUGen* unit, int inNumSamples, int ar_i, Action action){
   float *msd=IN(ar_i*2),*lsd=IN(ar_i*2+1), *out0=OUT(0), *out1=OUT(1);
   do{
-    double val = action(*(msd++)+*(lsd++));
+    double val = action(
+      static_cast<double>(*(msd++))+static_cast<double>(*(lsd++))
+    );
     float msd_out = (float) val;
     *(out0++) = msd_out;
     *(out1++) = (float) (val-msd_out);
@@ -701,7 +705,7 @@ static inline void DOUBLE_LOOP1_ak_slope(SuperBinaryOpUGen* unit, int inNumSampl
 
 template<typename Action>
 static inline void DOUBLE_LOOP1_ka_slope(SuperBinaryOpUGen* unit, int inNumSamples, Action action){
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       DOUBLE_LOOP1_k(unit, inNumSamples, 1, [kr_prev, action](double b){return action(kr_prev,b);});
   } else {
@@ -1595,8 +1599,8 @@ void add_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 
 
 void add_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
-  auto action =   [](double a, double b){return a+b;};
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 1);
+  auto action = [](double a, double b){return a+b;};
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev == 0.f) {
           DOUBLE_ZCOPY(unit, inNumSamples, 1);
@@ -1707,7 +1711,7 @@ void sub_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 }
 void sub_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
   auto action = [](double a, double b){return a-b;};
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev == 0.f) {
           DOUBLE_ZCOPY(unit, inNumSamples, 1);
@@ -1812,7 +1816,7 @@ void mul_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 }
 void mul_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
   auto action = [](double a, double b){return a*b;};
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 1);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev == 0.f) {
           DOUBLE_ZCLEAR(inNumSamples);
@@ -1934,7 +1938,7 @@ void div_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 }
 void div_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
   auto action =   [](double a, double b){return a/b;};
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev == 0.f) {
           DOUBLE_ZCLEAR(inNumSamples);
@@ -2036,7 +2040,7 @@ void idiv_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 
 void idiv_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
   auto action = [](double a, double b){return floor(a/b);};
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev == 0.f) {
           DOUBLE_ZCOPY(unit, inNumSamples, 1);
@@ -2075,7 +2079,7 @@ void mod_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 }
 void mod_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
   auto action = [](double a, double b){return sc_mod(a,b);};
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev == 0.f) {
           DOUBLE_ZCOPY(unit, inNumSamples, 1);
@@ -2360,7 +2364,7 @@ void scaleneg_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 }
 
 void scaleneg_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev >= 0.f) {
           DOUBLE_ZCOPY(unit, inNumSamples, 1);
@@ -2396,7 +2400,7 @@ void pow_ak(SuperBinaryOpUGen* unit, int inNumSamples) {
 }
 
 void pow_ka(SuperBinaryOpUGen* unit, int inNumSamples) {
-  double kr_prev = unit->mPrevB; double kr_next = DOUBLE_ZIN0(unit, 0);
+  double kr_prev = unit->mPrevA; double kr_next = DOUBLE_ZIN0(unit, 0);
   if (kr_prev == kr_next) {
       if (kr_prev >= 0.f) {
         DOUBLE_LOOP1_k(unit, inNumSamples, 1, [kr_prev](double b){return pow(kr_prev,b);});

@@ -6,8 +6,8 @@ SuperPair : AbstractFunction {
     }
 
     *fromDouble { arg double = 0.0;
-        var msd = Float.from32Bits(double.as32Bits);
-        var lsd = Float.from32Bits((double - msd).as32Bits);
+        var msd = Float.from32Bits(double.asFloat.as32Bits);
+        var lsd = Float.from32Bits((double - msd).asFloat.as32Bits);
         ^super.newCopyArgs(msd, lsd);
     }
 
@@ -18,7 +18,6 @@ SuperPair : AbstractFunction {
         ^(msd + lsd);
     }
 
-    asPair { ^this }
 
     asBig { ^this }
 
@@ -130,73 +129,75 @@ SuperPoll : UGen {
 
 SuperBinaryOpUGen : BasicOpUGen {
 
-  var <channels;
+    var <channels;
 
     *new { arg selector, a, b;
-        ^this.multiNewList(['audio', selector] ++ a.asPair.asArray ++ b.asPair.asArray);
+        var pairArgs = a.asArray.collect(_.asPair) ++ b.asArray.collect(_.asPair);
+        ^this.multiNewList(['audio', selector] ++ pairArgs);
     }
 
-  determineRate { arg msdA, lsdA, msdB, lsdB;
-    if (msdA.rate == \demand, { ^\demand });
-    if (lsdA.rate == \demand, { ^\demand });
-    if (msdB.rate == \demand, { ^\demand });
-    if (lsdB.rate == \demand, { ^\demand });
-    if (msdA.rate == \audio, { ^\audio });
-    if (lsdA.rate == \audio, { ^\audio });
-    if (msdB.rate == \audio, { ^\audio });
-    if (lsdB.rate == \audio, { ^\audio });
-    if (msdA.rate == \control, { ^\control });
-    if (lsdA.rate == \control, { ^\control });
-    if (msdB.rate == \control, { ^\control });
-    if (lsdB.rate == \control, { ^\control });
-    ^\scalar
-  }
+    determineRate { arg msdA, lsdA, msdB, lsdB;
+        if (msdA.rate == \demand, { ^\demand });
+        if (lsdA.rate == \demand, { ^\demand });
+        if (msdB.rate == \demand, { ^\demand });
+        if (lsdB.rate == \demand, { ^\demand });
+        if (msdA.rate == \audio, { ^\audio });
+        if (lsdA.rate == \audio, { ^\audio });
+        if (msdB.rate == \audio, { ^\audio });
+        if (lsdB.rate == \audio, { ^\audio });
+        if (msdA.rate == \control, { ^\control });
+        if (lsdA.rate == \control, { ^\control });
+        if (msdB.rate == \control, { ^\control });
+        if (lsdB.rate == \control, { ^\control });
+        ^\scalar
+    }
 
-  *new1 { arg rate, selector, msdA, lsdA, msdB, lsdB;
+    *new1 { arg rate, selector, pairA, pairB;
+        var msdA,msdB,lsdA,lsdB;
+        # msdA,lsdA = pairA.components;
+        # msdB,lsdB = pairB.components;
 
-    // eliminate degenerate cases
-    if (selector == '*') {
-      if ((msdA == 0.0) && (lsdA == 0.0), { ^0.0 });
-      if ((msdB == 0.0) && (lsdB == 0.0), { ^0.0 });
-      if ((msdA+lsdA) == 1.0 ) { ^SuperPair(msdB,lsdB) };
-      if ((msdA+lsdA) == -1.0 ) { ^SuperPair(msdB,lsdB).neg };
-      if ((msdB+lsdB) == 1.0 ) { ^SuperPair(msdA,lsdA) };
-      if ((msdB+lsdB) == -1.0 ) { ^SuperPair(msdA,lsdA).neg };
-    }{
-    if (selector == '+') {
-      if ((msdA == 0.0) && (lsdA == 0.0)) { ^SuperPair(msdB,lsdB) };
-      if ((msdB == 0.0) && (lsdB == 0.0)) { ^SuperPair(msdA,lsdA) };
-    }{
-    if (selector == '-') {
-      if ((msdA == 0.0) && (lsdA == 0.0)) { ^SuperPair(msdB,lsdB).neg };
-      if ((msdB == 0.0) && (lsdB == 0.0)) { ^SuperPair(msdA,lsdA) };
-    }{
-    if (selector == '/') {
-      if ((msdB+lsdB) == 1.0 ) { ^SuperPair(msdA,lsdA) };
-      if ((msdB+lsdB) == -1.0 ) { ^SuperPair(msdA,lsdA).neg };
-    }}}};
+        // eliminate degenerate cases
+        if (selector == '*') {
+            if ((msdA == 0.0) && (lsdA == 0.0), { ^0.asPair });
+            if ((msdB == 0.0) && (lsdB == 0.0), { ^0.asPair });
+            if ((msdA+lsdA) == 1.0 ) { ^SuperPair(msdB,lsdB) };
+            if ((msdA+lsdA) == -1.0 ) { ^SuperPair(msdB,lsdB).neg };
+            if ((msdB+lsdB) == 1.0 ) { ^SuperPair(msdA,lsdA) };
+            if ((msdB+lsdB) == -1.0 ) { ^SuperPair(msdA,lsdA).neg };
+        }{
+            if (selector == '+') {
+                if ((msdA == 0.0) && (lsdA == 0.0)) { ^SuperPair(msdB,lsdB) };
+                if ((msdB == 0.0) && (lsdB == 0.0)) { ^SuperPair(msdA,lsdA) };
+            }{
+                if (selector == '-') {
+                    if ((msdA == 0.0) && (lsdA == 0.0)) { ^SuperPair(msdB,lsdB).neg };
+                    if ((msdB == 0.0) && (lsdB == 0.0)) { ^SuperPair(msdA,lsdA) };
+                }{
+                    if (selector == '/') {
+                        if ((msdB+lsdB) == 1.0 ) { ^SuperPair(msdA,lsdA) };
+                        if ((msdB+lsdB) == -1.0 ) { ^SuperPair(msdA,lsdA).neg };
+        }}}};
 
 
-    ^super.new1(rate, selector, msdA, lsdA, msdB, lsdB)
-  }
+        ^super.new1(rate, selector, msdA, lsdA, msdB, lsdB)
+    }
 
-  init { arg theOperator, msdA, lsdA, msdB, lsdB;
-    this.operator = theOperator;
-    rate = this.determineRate( msdA, lsdA, msdB, lsdB );
-    inputs = [ msdA, lsdA, msdB, lsdB ];
-    channels = {|i| OutputProxy(rate, this, i)}!2;
-    inputs.postln;
-    rate.postln;
-    ^SuperPair(*channels)
-  }
+    init { arg theOperator, msdA, lsdA, msdB, lsdB;
+        this.operator = theOperator;
+        rate = this.determineRate( msdA, lsdA, msdB, lsdB );
+        inputs = [ msdA, lsdA, msdB, lsdB ];
+        channels = {|i| OutputProxy(rate, this, i)}!2;
+        ^SuperPair(*channels)
+    }
 
-  numOutputs { ^2 }
-  writeOutputSpecs { arg file;
-    channels.do({ arg output; output.writeOutputSpec(file); });
-  }
-  synthIndex_ { arg index;
-    synthIndex = index;
-    channels.do({ arg output; output.synthIndex_(index); });
-  }
+    numOutputs { ^2 }
+    writeOutputSpecs { arg file;
+        channels.do({ arg output; output.writeOutputSpec(file); });
+    }
+    synthIndex_ { arg index;
+        synthIndex = index;
+        channels.do({ arg output; output.synthIndex_(index); });
+    }
 
 }

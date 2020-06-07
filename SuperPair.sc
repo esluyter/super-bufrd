@@ -26,6 +26,8 @@ SuperPair : AbstractFunction {
         ^[msd, lsd];
     }
 
+    asPairComponents { ^this.components }
+
     asOSCArgEmbeddedArray { arg array;
 		    ^this.components.asOSCArgEmbeddedArray(array)
     }

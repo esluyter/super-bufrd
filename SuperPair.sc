@@ -18,6 +18,7 @@ SuperPair : AbstractFunction {
         ^(msd + lsd);
     }
 
+    asPair { ^this }
 
     asBig { ^this }
 

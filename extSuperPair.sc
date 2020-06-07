@@ -11,7 +11,8 @@
 
 + UGen {
     asPair {
-        ^SuperPair(this, 0.0)
+		    var method = switch(rate) {\audio}{\ar} {\control}{\kr};
+        ^SuperPair(this, DC.perform(method.postln,0))
     }
 
     superPoll { arg trig = 10, label, trigid = -1;

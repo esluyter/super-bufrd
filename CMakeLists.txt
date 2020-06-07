@@ -6,6 +6,7 @@ project (${PROJECT})
 include_directories(${SC_PATH}/include/plugin_interface)
 include_directories(${SC_PATH}/include/common)
 include_directories(${SC_PATH}/common)
+include_directories(${SC_PATH}/external_libraries/boost)
 
 set(CMAKE_SHARED_MODULE_PREFIX "")
 if(APPLE OR WIN32)
@@ -16,7 +17,6 @@ option(SUPERNOVA "Build plugins for supernova" OFF)
 if (SUPERNOVA)
     include_directories(${SC_PATH}/external_libraries/nova-tt)
     # actually just boost.atomic
-    include_directories(${SC_PATH}/external_libraries/boost)
     include_directories(${SC_PATH}/external_libraries/boost_lockfree)
     include_directories(${SC_PATH}/external_libraries/boost-lockfree)
 endif()
@@ -81,11 +81,15 @@ endif()
 
 add_library("SuperBufRd" MODULE "SuperBufRd.cpp")
 add_library("SuperPoll" MODULE "SuperPoll.cpp")
+add_library("SuperBinaryOpUGen" MODULE "SuperBinaryOpUGen.cpp")
 if(SUPERNOVA)
     add_library("SuperBufRd_supernova" MODULE "SuperBufRd.cpp")
     add_library("SuperPoll_supernova" MODULE "SuperPoll.cpp")
+    add_library("SuperBinaryOpUGen_supernova" MODULE "SuperBinaryOp.cpp")
     set_property(TARGET "SuperBufRd_supernova"
                  PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
     set_property(TARGET "SuperPoll_supernova"
+                 PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
+    set_property(TARGET "SuperBinaryOpUGen_supernova"
                  PROPERTY COMPILE_DEFINITIONS SUPERNOVA)
 endif()

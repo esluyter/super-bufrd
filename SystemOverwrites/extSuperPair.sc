@@ -63,3 +63,12 @@
         };
     }
 }
+
++ Buffer {
+    atSec { arg secs;
+        ^SuperPair.fromDouble(min(secs * sampleRate, numFrames));
+    }
+    atPair { arg a, b;
+        ^SuperPair(a, b).asFloat / sampleRate;
+    }
+}

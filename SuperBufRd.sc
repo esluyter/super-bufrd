@@ -52,19 +52,31 @@ SuperBufRd : MultiOutUGen {
     }
 
     init { arg argNumChannels, theInputs;
-		inputs = theInputs;
-		^this.initOutputs(argNumChannels, rate);
-	}
+  		inputs = theInputs;
+  		^this.initOutputs(argNumChannels, rate);
+  	}
     argNamesInputsOffset { ^2 }
-	checkInputs {
-		if (rate == 'audio' and: {inputs.at(1).rate != 'audio'}, {
-			^("phaseInt input is not audio rate: " + inputs.at(1) + inputs.at(1).rate);
-		});
-        if (rate == 'audio' and: {inputs.at(2).rate != 'audio'}, {
-			^("phaseDec input is not audio rate: " + inputs.at(2) + inputs.at(2).rate);
-		});
-		^this.checkValidInputs
-	}
+  	checkInputs {
+  		if (rate == 'audio' and: {inputs.at(1).rate != 'audio'}, {
+  			^("phaseInt input is not audio rate: " + inputs.at(1) + inputs.at(1).rate);
+  		});
+          if (rate == 'audio' and: {inputs.at(2).rate != 'audio'}, {
+  			^("phaseDec input is not audio rate: " + inputs.at(2) + inputs.at(2).rate);
+  		});
+  		^this.checkValidInputs
+  	}
+}
+
+
+SuperBufWr : UGen {
+    *ar { arg inputArray, bufnum=0, phase=0, loop=1;
+        phase = phase.asPair.components.postln;
+        ^this.multiNewList((['audio', bufnum] ++ phase ++ [loop] ++ inputArray.asArray).postln)
+    }
+    *kr { arg inputArray, bufnum=0, phase=0, loop=1;
+        phase = phase.asPair.components;
+        ^this.multiNewList(['control', bufnum] ++ phase ++ [loop]  ++ inputArray.asArray)
+    }
 }
 
 SuperBufFrames : MultiOutUGen {

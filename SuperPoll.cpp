@@ -57,6 +57,7 @@ private:
 	float m_trig;
 	float m_lastPoll;
 	char *m_id_string;
+  const char* m_cmdName = "/tr";
 	bool m_mayprint;
     //////////////////////////////////////////////////////////////////
 
@@ -80,24 +81,15 @@ private:
             double msd = msdBlock[i];
             double lsd = lsdBlock[i];
             double value = msd + lsd;
-            /*
-
-            float valueMsd = (float)value;
-            float valueLsd = (float)(value - valueMsd);
-            msdOut[i] = valueMsd;
-            lsdOut[i] = valueLsd;
-
-            Print("%f\n", trig[i]);
-            */
 
             if((lasttrig <= 0.0) && (trig[i] > 0.0)){
-    			if (m_mayprint)
-    				Print("%s: %f\n", m_id_string, value);
+      			if (m_mayprint)
+      				Print("%s: %f\n", m_id_string, value);
 
-                /*
-    			if (in0(3) >= 0.0)
-    				SendTrigger(&mParent->mNode, (int)in0(3), msd);
-                    */
+      			if (in0(3) >= 0.0){
+              float values[2] = { static_cast<float>(msd), static_cast<float>(lsd)};
+              SendNodeReply(&mParent->mNode, (int)in0(3), m_cmdName, 2, values);
+            }
     		}
     		lasttrig = trig[i];
     	}
@@ -121,10 +113,10 @@ private:
     			if (m_mayprint)
     				Print("%s: %f\n", m_id_string, value);
 
-                /*
-    			if (in0(3) >= 0.0)
-    				SendTrigger(&mParent->mNode, (int)in0(3), msd);
-                    */
+          if (in0(3) >= 0.0){
+            float values[2] = { static_cast<float>(msd), static_cast<float>(lsd)};
+            SendNodeReply(&mParent->mNode, (int)in0(3), m_cmdName, 2, values);
+          }
     		}
     		lasttrig = trig[i];
     	}
@@ -145,10 +137,10 @@ private:
     			if (m_mayprint)
     				Print("%s: %f\n", m_id_string, value);
 
-                /*
-    			if (in0(3) >= 0.0)
-    				SendTrigger(&mParent->mNode, (int)in0(3), msd);
-                    */
+            if (in0(3) >= 0.0){
+              float values[2] = { static_cast<float>(msd), static_cast<float>(lsd)};
+              SendNodeReply(&mParent->mNode, (int)in0(3), m_cmdName, 2, values);
+            }
     		}
     		lasttrig = trig[i];
     	}
@@ -166,10 +158,10 @@ private:
 			if (m_mayprint)
 				Print("%s: %f\n", m_id_string, value);
 
-            /*
-			if (in0(3) >= 0.0)
-				SendTrigger(&mParent->mNode, (int)in0(3), msd);
-                */
+        if (in0(3) >= 0.0){
+          float values[2] = { static_cast<float>(msd), static_cast<float>(lsd)};
+          SendNodeReply(&mParent->mNode, (int)in0(3), m_cmdName, 2, values);
+        }
 		}
     	m_trig = trig;
     }

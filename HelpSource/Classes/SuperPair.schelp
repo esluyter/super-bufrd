@@ -1,0 +1,133 @@
+TITLE:: SuperPair
+summary:: A wrapper for a pair of numbers or UGens to function as a double precision value on the server.
+categories:: Math
+related:: Classes/SuperPoll, Classes/SuperPhasor, Classes/SuperBufRd
+
+DESCRIPTION::
+Scsynth only supports passing 32-bit floating point values to/from sclang and between UGens. This becomes a limitation when trying to access more than 2**24 samples from an audio buffer using BufRd (about 6.3 minutes at 44100Hz).
+
+SuperPair was designed to overcome this limitation by representing a 64-bit double as a pair of 32-bit floats; UGens like SuperPhasor and SuperBufRd accept these pairs as inputs and internally combine them into a 64-bit double. This allows for subsample-accurate access into hours-long audio buffers.
+
+The easiest way to construct a SuperPair from the language side is to call code::.atPair:: on a number.
+
+The easiest way to accept SuperPair synth controls is to call code::.skr:: or code::.sar:: on a Symbol to make a new NamedControl.
+
+(See examples below.)
+
+
+CLASSMETHODS::
+
+METHOD:: fromDouble
+
+ARGUMENT:: double
+the double-precision value to represent as a SuperPair
+
+
+
+METHOD:: new
+
+ARGUMENT:: msd
+most significant digits -- the result of Float.from32Bits(double.asFloat.as32Bits)
+
+ARGUMENT:: lsd
+least significant digits -- the rounding error, the result of double - msd
+
+
+
+INSTANCEMETHODS::
+
+PRIVATE:: superPoll, asBig, asOSCArgEmbeddedArray, composeUnaryOp, composeNAryOp, composeBinaryOp, reverseComposeBinaryOp
+
+SUBSECTION:: Component access
+
+METHOD:: msd
+
+returns:: most significant digits (see above)
+
+METHOD:: lsd
+
+returns:: least significant digits (see above)
+
+METHOD:: components
+
+returns:: [msd, lsd]
+
+METHOD:: asPair
+
+returns:: code::this::
+
+METHOD:: asPairComponents
+
+returns:: alias for code::this.components::
+
+METHOD:: asFloat
+Reduces pair back down to single floating point value; if the SuperPair is wrapping a pair of UGens, this necessarily involves loss of double precision and will generate a warning.
+
+returns:: msd + lsd
+
+
+SUBSECTION:: On the server
+
+METHOD:: poll
+Polls the output of the wrapped UGens every interval seconds and posts the combined double-precision result.
+
+ARGUMENT:: trig
+Trig frequency
+
+ARGUMENT:: label
+A symbol to label the output
+
+ARGUMENT:: trigid
+Numerical ID
+
+DISCUSSION::
+See LINK::Classes/SuperPoll::
+
+
+METHOD:: isUGen
+
+returns:: code::true:: if the SuperPair is wrapping UGen components, code::false:: if it is wrapping simple numbers.
+
+
+METHOD:: rate
+
+returns:: code::\audio::, code::\control::, or code::\scalar::
+
+
+METHOD:: if
+Outputs code::trueUGen:: when the receiver outputs 1, code::falseUGen:: when the receiver outputs 0. If the receiver outputs a value between 0 and 1, a mixture of both will be played.
+
+
+
+EXAMPLES::
+
+SUBSECTION:: Basic usage
+Constructing a SuperPair, getting it into the server, and polling it:
+code::
+(
+x = {
+    var bigValue = \bigValue.skr(0);
+    bigValue.poll;
+    DC.ar(0);
+}.play;
+)
+
+x.set(\bigValue, 9000.00002.asPair);
+
+x.free;
+::
+
+Contrast with regular 32-bit precision:
+code::
+(
+x = {
+    var bigValue = \bigValue.kr(0);
+    bigValue.poll;
+    DC.ar(0);
+}.play;
+)
+
+x.set(\bigValue, 9000.00002);
+
+x.free;
+::

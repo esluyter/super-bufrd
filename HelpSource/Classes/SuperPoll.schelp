@@ -1,0 +1,49 @@
+TITLE:: SuperPoll
+categories:: UGens>Info
+summary:: Print the current output value of a SuperPair
+related:: Classes/SuperPair, Classes/Poll
+
+DESCRIPTION::
+Print the current output value of a UGen SuperPair, useful for debugging SynthDefs.
+
+Also accessible via the convenience method code::.poll:: on a SuperPair.
+
+WARNING:: Printing values from the Server in intensive for the CPU. SuperPoll should be used for debugging purposes.::
+
+
+CLASSMETHODS::
+private:: new, new1
+
+
+METHOD:: ar, kr
+
+ARGUMENT:: trig
+a non-positive to positive transition telling SuperPoll to return a value, or a simple number indicating frequency for trigger
+
+ARGUMENT:: value
+the signal you want to poll
+
+ARGUMENT:: label
+a string or symbol to be printed with the polled value
+
+ARGUMENT:: trigid
+if greater then 0, a '/tr' message is sent back to the client (similar to SendTrig)
+
+returns:: its in signal (and is therefore transparent).
+
+
+
+INSTANCEMETHODS::
+private:: init
+
+
+EXAMPLES::
+
+code::
+(
+{
+  SuperPoll.ar(10, SuperPhasor.ar, 'SuperPhasor');
+  DC.ar(0);
+}.play
+)
+::

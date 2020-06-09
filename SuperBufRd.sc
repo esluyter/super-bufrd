@@ -95,7 +95,7 @@ SuperPlayBuf : MultiOutUGen{
     *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
         var pos;
         start = BufSampleRate.kr(bufnum) * start;
-        end = BufSampleRate.kr(bufnum) * (end ? SuperBufFrames.kr(bufnum));
+        end = if(end.notNil){ BufSampleRate.kr(bufnum)*end }{ SuperBufFrames.kr(bufnum) };
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
         pos = SuperPhasor.ar(trig, rate, start, end, reset, loop);
@@ -112,7 +112,7 @@ SuperPlayBuf : MultiOutUGen{
     *new1 { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2;
           var pos, isPlaying;
           start = BufSampleRate.kr(bufnum) * start;
-          end = BufSampleRate.kr(bufnum) * (end ? SuperBufFrames.kr(bufnum));
+          end = if(end.notNil){ BufSampleRate.kr(bufnum)*end }{ SuperBufFrames.kr(bufnum) };
           reset = BufSampleRate.kr(bufnum) * reset;
           rate = BufRateScale.kr(bufnum) * rate;
           # pos, isPlaying = SuperPhasor.arDetails(trig, rate, start, end, reset, loop);
@@ -126,7 +126,7 @@ SuperPlayBufX {
         var sig0, sig1, sig2, sig3, sig;
 
         start = BufSampleRate.kr(bufnum) * start;
-        end = BufSampleRate.kr(bufnum) * (end ? SuperBufFrames.kr(bufnum));
+        end = if(end.notNil){ BufSampleRate.kr(bufnum) * end }{ SuperBufFrames.kr(bufnum) };
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
         # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, fadeTime * SampleRate.ir);
@@ -142,7 +142,7 @@ SuperPlayBufX {
         var sig0, sig1, sig2, sig3, sig;
 
         start = BufSampleRate.kr(bufnum) * start;
-        end = BufSampleRate.kr(bufnum) * (end ? SuperBufFrames.kr(bufnum));
+        end = if(end.notNil){ BufSampleRate.kr(bufnum)*end }{ SuperBufFrames.kr(bufnum) };
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
         # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, fadeTime * SampleRate.ir);

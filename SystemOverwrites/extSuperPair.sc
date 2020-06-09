@@ -29,6 +29,16 @@
     superPoll { arg trig = 10, label, trigid = -1;
         ^SuperPoll.ar(trig, this, label, trigid);
     }
+
+    composeBinaryOp { arg aSelector, anInput;
+    		if (anInput.isValidUGenInput, {
+    			^BinaryOpUGen.new(aSelector, this, anInput)
+    		},{
+          // adding a return statement here (check out UGen:composeBinaryOp)
+          // so we can return a SuperBinaryOpUGen
+    			^anInput.performBinaryOpOnUGen(aSelector, this);
+    		});
+	  }
 }
 
 + Symbol {

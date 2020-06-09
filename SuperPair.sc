@@ -32,6 +32,12 @@ SuperPair : AbstractFunction {
 		    ^this.components.asOSCArgEmbeddedArray(array)
     }
 
+    // or in other words: don't pass SuperPair around normal UGens
+    // - prevent unwanted conversions/multichannel-expansion
+    // - make sure SuperPair is handled only by "prepared" UGens
+    // - allow performBinaryOpOnUGen to fire when doing (UGen * SuperPair)
+    isValidUGenInput { ^false }
+
     isUGen {
         ^(msd.isUGen or: lsd.isUGen)
     }
@@ -74,6 +80,10 @@ SuperPair : AbstractFunction {
               BinaryOpFunction.new(aSelector, something, this.asFloat, adverb).value
             )
         }
+    }
+    // ops like (UGen * SuperPair) should return a SuperBinaryOpUGen
+    performBinaryOpOnUGen { arg aSelector, aUGen;
+        ^aUGen.asPair.perform(aSelector, this)
     }
 
     composeNAryOp { arg aSelector, anArgList;

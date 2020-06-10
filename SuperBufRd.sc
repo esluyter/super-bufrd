@@ -131,7 +131,7 @@ SuperPlayBufX {
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
         constantFadeTime = constantFadeTime.floor.clip(0, 1);
-        overlap = min((end - start).asFloat, fadeTime * BufSampleRate.kr(bufnum) * (constantFadeTime * rate + (1 - constantFadeTime)));
+        overlap = min((end - start).as32BitFloat, fadeTime * BufSampleRate.kr(bufnum) * (constantFadeTime * rate + (1 - constantFadeTime)));
 
         # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, overlap);
         sig0 = SuperBufRd.ar(numChannels, bufnum, phase0, 0, quality);
@@ -151,7 +151,7 @@ SuperPlayBufX {
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
         constantFadeTime = constantFadeTime.floor.clip(0, 1);
-        overlap = min((end - start).asFloat, fadeTime * BufSampleRate.kr(bufnum) * (constantFadeTime * rate + (1 - constantFadeTime)));
+        overlap = min((end - start).as32BitFloat, fadeTime * BufSampleRate.kr(bufnum) * (constantFadeTime * rate + (1 - constantFadeTime)));
 
         # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, overlap);
         sig0 = SuperBufRd.ar(numChannels, bufnum, phase0, 0, quality);

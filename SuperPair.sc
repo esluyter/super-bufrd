@@ -2,7 +2,7 @@ SuperPair : AbstractFunction {
     var <msd, <lsd;
 
     *new { arg msd=0, lsd=0;
-        ^super.newCopyArgs(msd, lsd);
+        ^super.newCopyArgs(msd.asFloat, lsd.asFloat);
     }
 
     *fromDouble { arg double = 0.0;
@@ -16,6 +16,14 @@ SuperPair : AbstractFunction {
             "SuperPair UGen .asFloat loses double precision".warn;
         }
         ^(msd + lsd);
+    }
+
+    as32BitFloat {
+        if (this.isUGen) {
+            ^(msd + lsd);
+        } {
+            ^Float.from32Bits((msd + lsd).as32Bits);
+        }
     }
 
     asPair { ^this }

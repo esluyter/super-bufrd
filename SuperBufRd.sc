@@ -121,36 +121,44 @@ SuperPlayBuf : MultiOutUGen{
 }
 
 SuperPlayBufX {
-    *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.01;
+    *ar { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.01, constantFadeTime=0, fadeUGen=(XFade2);
         var phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing;
         var sig0, sig1, sig2, sig3, sig;
+        var overlap;
 
         start = BufSampleRate.kr(bufnum) * start;
         end = if(end.notNil){ BufSampleRate.kr(bufnum) * end }{ SuperBufFrames.kr(bufnum) };
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
-        # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, fadeTime * SampleRate.ir);
+        constantFadeTime = constantFadeTime.floor.clip(0, 1);
+        overlap = min((end - start).asFloat, fadeTime * BufSampleRate.kr(bufnum) * (constantFadeTime * rate + (1 - constantFadeTime)));
+
+        # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, overlap);
         sig0 = SuperBufRd.ar(numChannels, bufnum, phase0, 0, quality);
         sig1 = SuperBufRd.ar(numChannels, bufnum, phase1, 0, quality);
         sig2 = SuperBufRd.ar(numChannels, bufnum, phase2, 0, quality);
         sig3 = SuperBufRd.ar(numChannels, bufnum, phase3, 0, quality);
-        ^XFade2.ar(XFade2.ar(sig0, sig1, pan0), XFade2.ar(sig2, sig3, pan1), pan2);
+        ^fadeUGen.ar(fadeUGen.ar(sig0, sig1, pan0), fadeUGen.ar(sig2, sig3, pan1), pan2);
     }
 
-    *arDetails { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.01;
+    *arDetails { arg numChannels=1, bufnum=0, rate=1, trig=0, reset=0, start=0, end=nil, loop=1, quality=2, fadeTime=0.01, constantFadeTime=0, fadeUGen=(XFade2);
         var phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing;
         var sig0, sig1, sig2, sig3, sig;
+        var overlap;
 
         start = BufSampleRate.kr(bufnum) * start;
         end = if(end.notNil){ BufSampleRate.kr(bufnum)*end }{ SuperBufFrames.kr(bufnum) };
         reset = BufSampleRate.kr(bufnum) * reset;
         rate = BufRateScale.kr(bufnum) * rate;
-        # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, fadeTime * SampleRate.ir);
+        constantFadeTime = constantFadeTime.floor.clip(0, 1);
+        overlap = min((end - start).asFloat, fadeTime * BufSampleRate.kr(bufnum) * (constantFadeTime * rate + (1 - constantFadeTime)));
+
+        # phase0, phase1, pan0, phase2, phase3, pan1, pan2, playing = SuperPhasorX.ar(trig, rate, start, end, reset, loop, overlap);
         sig0 = SuperBufRd.ar(numChannels, bufnum, phase0, 0, quality);
         sig1 = SuperBufRd.ar(numChannels, bufnum, phase1, 0, quality);
         sig2 = SuperBufRd.ar(numChannels, bufnum, phase2, 0, quality);
         sig3 = SuperBufRd.ar(numChannels, bufnum, phase3, 0, quality);
-        ^[XFade2.ar(XFade2.ar(sig0, sig1, pan0), XFade2.ar(sig2, sig3, pan1), pan2), phase0, playing];
+        ^[fadeUGen.ar(fadeUGen.ar(sig0, sig1, pan0), fadeUGen.ar(sig2, sig3, pan1), pan2), phase0, playing];
     }
 }
 

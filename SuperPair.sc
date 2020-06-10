@@ -111,6 +111,16 @@ SuperPair : AbstractFunction {
             Error("Non Boolean in test").throw
         }
     }
+
+    asString { ^"SuperPair(%)".format(this.asFloat.asString) }
+    debug { arg caller;
+		if(caller.notNil,{
+			Post << caller << ": " << this.asString << this.components << Char.nl;
+		},{
+			Post << this.asString << this.components << Char.nl;
+		});
+    }
+
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -43,7 +43,7 @@ x.set(\pos, 230.704.asPair, \trig, 1);
 // print the elapsed time:
 OSCdef(\playhead, { |msg|
     ("Playhead: %       BufDur: %".format(
-        ~buf.atPair(*msg[3..4]).asTimeString,
+        SuperPair(*msg[3..4]).asFloat.asTimeString,
         ~buf.duration.asTimeString)
     ).postln;
 }, '/playhead');

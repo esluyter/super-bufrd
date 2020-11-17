@@ -2,13 +2,31 @@ SuperPair : AbstractFunction {
     var <msd, <lsd;
 
     *new { arg msd=0, lsd=0;
-        ^super.newCopyArgs(msd.asFloat, lsd.asFloat);
+        if(this.validateInputs(msd,lsd).not){
+            Error("Invalid SuperPair inputs: %, %".format(msd,lsd)).throw;
+            ^nil
+        };
+        // pass ugens: they can only be 32 bit floats
+        if(msd.isUGen and: lsd.isUGen){
+            ^super.newCopyArgs(msd, lsd);
+        };
+        if (msd.isUGen or: lsd.isUGen) {
+            if([msd,lsd].detect(_.isUGen.not) != 0){
+                ^(msd + lsd).asPair
+            }{
+                ^super.newCopyArgs([msd,lsd].detect(_.isUGen), 0)
+            }
+
+        } {
+            var double = (msd + lsd).asFloat;
+            msd = Float.from32Bits(double.as32Bits);
+            lsd = Float.from32Bits((double - msd).as32Bits);
+            ^super.newCopyArgs(msd, lsd);
+        }
     }
 
-    *fromDouble { arg double = 0.0;
-        var msd = Float.from32Bits(double.asFloat.as32Bits);
-        var lsd = Float.from32Bits((double - msd).asFloat.as32Bits);
-        ^super.newCopyArgs(msd, lsd);
+    *validateInputs { arg ...args;
+        ^args.any{|x| x.isNil or: x.isCollection }.not
     }
 
     asFloat {
@@ -67,7 +85,7 @@ SuperPair : AbstractFunction {
         ^if(this.isUGen){
             thisMethod.notYetImplemented
         }{
-            SuperPair.fromDouble(UnaryOpFunction.new(aSelector, this.asFloat).value)
+            SuperPair(UnaryOpFunction.new(aSelector, this.asFloat).value)
         }
     }
 
@@ -75,7 +93,7 @@ SuperPair : AbstractFunction {
         ^if(this.isUGen || something.isUGen){
             SuperBinaryOpUGen(aSelector,this,something)
         }{
-            SuperPair.fromDouble(
+            SuperPair(
               BinaryOpFunction.new(aSelector, this.asFloat, something, adverb).value
             )
         }
@@ -84,7 +102,7 @@ SuperPair : AbstractFunction {
         ^if(this.isUGen || something.isUGen){
             SuperBinaryOpUGen(aSelector,something,this)
         }{
-            SuperPair.fromDouble(
+            SuperPair(
               BinaryOpFunction.new(aSelector, something, this.asFloat, adverb).value
             )
         }
@@ -98,7 +116,7 @@ SuperPair : AbstractFunction {
         ^if(this.isUGen){
             ^thisMethod.notYetImplemented
         }{
-            SuperPair.fromDouble(
+            SuperPair(
               NAryOpFunction.new(aSelector, this.asFloat, anArgList).value
             )
         }
@@ -112,7 +130,13 @@ SuperPair : AbstractFunction {
         }
     }
 
-    asString { ^"SuperPair(%)".format(this.asFloat.asString) }
+    asString {
+        ^if(this.isUGen){
+            "SuperPair(%, %)".format(this.msd, this.lsd)
+        }{
+            "SuperPair(%)".format(this.asFloat)
+        }
+    }
     debug { arg caller;
 		if(caller.notNil,{
 			Post << caller << ": " << this.asString << this.components << Char.nl;

@@ -2,7 +2,7 @@
 
     asPair {
         var double = this.asFloat;
-        ^SuperPair.fromDouble(double);
+        ^SuperPair(double);
     }
 
     // useful for partial application
@@ -17,14 +17,15 @@
 
 + UGen {
     asPair {
-		var method = switch(rate) {\audio}{\ar} {\control}{\kr};
-        ^SuperPair(this, DC.perform(method, 0))
+        ^SuperPair(this, 0)
     }
 
     // useful for partial application
     asPairComponents {
         ^this.asPair.components;
     }
+
+    as32BitFloat { ^this }
 
     superPoll { arg trig = 10, label, trigid = -1;
         ^SuperPoll.ar(trig, this, label, trigid);
@@ -56,6 +57,8 @@
 
 + Array {
 
+    as32BitFloat { ^ this collect: _.as32BitFloat }
+
     superPoll { arg trig = 10, label, trigid = -1;
         if (label.isNil) { label = this.collect{ |thing, index| "Array [%] (%)".format(index, thing.class) }};
         ^SuperPoll.ar(trig, this, label, trigid);
@@ -76,7 +79,7 @@
 
 + Buffer {
     atSec { arg secs;
-        ^SuperPair.fromDouble(min(secs * sampleRate, numFrames));
+        ^SuperPair(min(secs * sampleRate, numFrames));
     }
     atPair { arg a, b;
         ^SuperPair(a, b).asFloat / sampleRate;

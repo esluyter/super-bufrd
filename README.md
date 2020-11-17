@@ -4,12 +4,9 @@ UGens for accessing long buffers with subsample accuracy:
 - **SuperPhasor** A new phasor UGen to drive a SuperBufRd
 - **SuperPhasorX** A new phasor UGen to drive multiple SuperBufRds with crossfading to allow for click-free looping and position jumping
 - **SuperPair** A sclang class to communicate position information with these UGens
-- **SuperPlayBuf** A pseudo-ugen wrapper around a SuperPhasor and SuperBufRd, similar to PlayBuf
-- **SuperPlayBufDetails** Same thing but outputs the phasor information as well as audio signal
-- **SuperPlayBufX** / **SuperPlayBufXDetails** Like SuperPlayBuf/SuperPlayBufDetails but offers crossfading at loop points and on jumping to a new position
+- **SuperPlayBuf** A pseudo-ugen wrapper around a SuperPhasor and SuperBufRd, similar to PlayBuf. Optionally outputs the phasor information as well as audio signal
+- **SuperPlayBufX** Like SuperPlayBuf but offers crossfading at loop points and on jumping to a new position
 - **SuperBufFrames** A modification of BufFrames
-
-[Full spec / documentation of classes here](https://gist.github.com/esluyter/53597bed464d16fdb603c9db8405e3a9)
 
 This implementation is a work in progress. If you find bugs or have feature requests please submit an issue!
 
@@ -24,7 +21,7 @@ x = {
 }.play;
 
 // jump to a certain position in seconds:
-x.set(\pos, ~buf.atSec(230.704), \trig, 1);
+x.set(\pos, 230.704.asPair, \trig, 1);
 ```
 
 ## More elaborate example with playhead
@@ -52,9 +49,9 @@ OSCdef(\playhead, { |msg|
 }, '/playhead');
 )
 
-~synth.set(\pos, ~buf.atSec(60 * 10), \trig, 1) // 10 minutes in
-~synth.set(\pos, ~buf.atSec(60 * 40), \trig, 1) // 40 minutes in
-~synth.set(\pos, ~buf.atSec(60 * 60), \trig, 1) // 1 hour in
+~synth.set(\pos, (60 * 10).asPair, \trig, 1) // 10 minutes in
+~synth.set(\pos, (60 * 40).asPair, \trig, 1) // 40 minutes in
+~synth.set(\pos, (60 * 60).asPair, \trig, 1) // 1 hour in
 ```
 
 ## Build instructions

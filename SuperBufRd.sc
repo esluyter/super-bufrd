@@ -116,7 +116,7 @@ SuperPlayBuf : MultiOutUGen{
           reset = BufSampleRate.kr(bufnum) * reset;
           rate = BufRateScale.kr(bufnum) * rate;
           # pos, isPlaying = SuperPhasor.arDetails(trig, rate, start, end, reset, loop);
-          ^[SuperBufRd.ar(numChannels, bufnum, pos, 0, quality), pos, isPlaying];
+          ^[SuperBufRd.ar(numChannels, bufnum, pos, 0, quality), pos / BufSampleRate.kr(bufnum), isPlaying];
     }
 }
 
@@ -158,7 +158,7 @@ SuperPlayBufX {
         sig1 = SuperBufRd.ar(numChannels, bufnum, phase1, 0, quality);
         sig2 = SuperBufRd.ar(numChannels, bufnum, phase2, 0, quality);
         sig3 = SuperBufRd.ar(numChannels, bufnum, phase3, 0, quality);
-        ^[fadeUGen.ar(fadeUGen.ar(sig0, sig1, pan0), fadeUGen.ar(sig2, sig3, pan1), pan2), phase0, playing];
+        ^[fadeUGen.ar(fadeUGen.ar(sig0, sig1, pan0), fadeUGen.ar(sig2, sig3, pan1), pan2), phase0 / BufSampleRate.kr(bufnum), playing];
     }
 }
 

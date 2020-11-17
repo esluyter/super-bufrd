@@ -57,9 +57,23 @@ OSCdef(\playhead, { |msg|
 ~synth.set(\pos, ~buf.atSec(60 * 60), \trig, 1) // 1 hour in
 ```
 
-## Mac / Linux build instructions
-- On a Mac, make sure you have Xcode command-line tools installed
-- Make sure you have a copy of the SuperCollider source code
+## Build instructions
+
+### Requirements
+
+General requirements:
+- git (for Windows, install git and git-bash)
+- cmake
+- a copy of the SuperCollider source code
+
+macOS requirements:
+- make sure you have Xcode command-line tools installed
+
+Windows requirements:
+- git-bash (installed with Git)
+- Visual Studio Community Version / Desktop development with C++
+
+### Non-Windows build steps
 
 Run the following commands in a terminal:
 ```
@@ -67,27 +81,25 @@ git clone https://github.com/esluyter/super-bufrd.git
 cd super-bufrd
 mkdir build
 cd build
-cmake -DSC_PATH=/path/to/sc3source/ ..
-cmake -DCMAKE_BUILD_TYPE=RELEASE ..
-make
+cmake -DSC_PATH=/path/to/sc3source/ -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
 ```
 Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.
 
-## Windows build instructions
-I'm not a Windows expert, but these are the steps that worked for me on a 64-bit version of Windows 10. If you have a 32-bit version, omit the "Win64" from the first cmake line below.
+### Windows build steps
 
-- Install git
-- Install cmake
-- Install visual studio community 2017 / Desktop development with C++
-- Make sure you have a copy of the SuperCollider source code
+Replace `<generator>` with the
+[generator name](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators) for your
+compiler. For instance, for Visual Studio 2017 you would use `-G "Visual Studio 15 2017"`. Replace `x64` with `Win32`
+for a 32-bit build.
 
-Run the following commands in git bash:
+Run the following commands in the git-bash terminal:
 ```
-git clone https://github.com/esluyter/super-bufrd
+git clone https://github.com/esluyter/super-bufrd.git
 cd super-bufrd
 mkdir build
 cd build
-cmake -G "Visual Studio 15 2017 Win64" -DSC_PATH=/path/to/sc3source ..
+cmake -G "<generator>" -A x64 -DSC_PATH=/path/to/sc3source/ -DCMAKE_BUILD_TYPE=Release ..
 cmake --build . --config Release
 ```
 Move the super-bufrd folder into your `Platform.userExtensionDir` and recompile sclang.

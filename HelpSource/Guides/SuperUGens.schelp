@@ -1,0 +1,156 @@
+title:: SuperUGens Overview
+summary:: An overview of the SuperUGens library
+related:: Classes/SuperPhasor, Classes/SuperBufRd, Classes/SuperPlayBuf, Classes/SuperBufFrames, Classes/SuperPhasorX, Classes/SuperPlayBufX, Classes/SuperPlayBufCF
+categories:: SuperUGens
+
+This is a suite of UGens written to solve vanilla SuperCollider limitations on audio buffer access and playback, by enabling double precision UGen inputs and outputs.
+
+warning::
+This library is still a work in progress. Please submit feedback, bug reports, feature ideas to the github issue page <https://github.com/esluyter/super-bufrd/issues>.
+::
+
+section::Background: the problem with BufRd
+SCSynth only supports passing 32-bit floating point values to/from sclang and between UGens. Therefore the link::Classes/BufRd:: UGen takes a 32-bit float as an index into a buffer. The problem is that a 32-bit float only has about 7 digits of precision, which means that using BufRd to play an audio buffer at a playback rate of 0.3, I start noticing major artifacts around 2**20 samples in (20 seconds at 48k).
+
+Because UGen ins and outs are 32-bit floats, the indexing accuracy progressively decreases the later into a buffer one tries to access using BufRd, resulting in progressively more audible artifacts over time.
+
+subsection::Core library alternatives
+link::Classes/PlayBuf:: and link::Classes/VDiskIn:: do not suffer from these limitations (i.e. you can play artifact-free at any rate from anywhere in the buffer within reason -- eventually after hours or days you’d also hit the limits of the double data type), but they also lack any means of finding out where exactly in the buffer you are currently playing, and because they take a starting position as a 32-bit float, you eventually become limited on how sample-accurately you can cue playback. (VDiskIn also doesn’t allow negative rates.)
+
+
+section::The solution: SuperPair
+This library introduces a new data structure: the link::Classes/SuperPair::.
+
+SuperPair was designed to overcome this limitation by representing a 64-bit double as a pair of 32-bit floats, which may be added together to reconstruct the 64-bit double.
+
+UGens like SuperPhasor and SuperBufRd accept these pairs as inputs and internally combine them into a 64-bit double. This allows for subsample-accurate access into hours-long audio buffers.
+
+To construct a SuperPair in the language, use code::.asPair:::
+
+code::
+y = 9000.00002.asPair
+::
+
+To inspect the component floats, use code::.msd:: and code::.lsd:: methods, or code::.components:::
+
+code::
+y.msd
+y.lsd
+y.components
+::
+
+To get a SuperPair value onto the server, you can create a SuperPair NamedControl very similarly to an ordinary link::Classes/NamedControl::. For reference, ordinary NamedControl:
+
+code::
+(
+x = {
+  var value = \value.kr(0);
+  value.poll;
+  0;
+}.play;
+)
+x.set(\value, 9000.00002);
+x.free;
+::
+
+As you can see, since all data flow on the server is 32-bit float, we lose precision here. So now for the SuperPair version:
+
+code::
+(
+x = {
+  var value = \value.skr(0);
+  value.poll;
+  0;
+}.play;
+)
+x.set(\value, 9000.00002.asPair);
+x.free;
+::
+
+As you can see, here the precision is preserved, and now value is actually a SuperPair wrapped around two 32-bit float UGens.
+
+note::
+Two-operator math functions are supported:
+code::
+(
+x = {
+  var value = \value.skr(0);
+  var value2 = \value2.skr(1);
+  (value + value2).poll(label: "add");
+  (value / value2).poll(label: "divide");
+  max(value, value2).poll(label: "max");
+  mod(value, value2).poll(label: "mod");
+  0;
+}.play;
+)
+x.set(\value, 9000.00002.asPair);
+x.set(\value2, 800.111111.asPair)
+x.free;
+::
+Other math operations are a work in progress.
+::
+
+
+section::New UGens
+
+This library introduces a new phasor UGen which outputs a SuperPair, and a new buffer UGen which takes a SuperPair position index: link::Classes/SuperPhasor:: and link::Classes/SuperBufRd::.
+
+subsection::SuperPhasor
+
+code::
+SuperPhasor.ar(trig: 0, rate: 1, start: 0, end: 48000, reset: 0, loop: 1)
+::
+
+link::Classes/SuperPhasor:: works much like link::Classes/Phasor::, outputting a value starting at strong::reset:: and incrementing by strong::rate:: per sample, bounded by strong::start:: and strong::end::. If strong::loop:: is set to 1, the output value will wrap when it reaches the boundary. When a trigger is received at strong::trig::, the output value will jump to strong::reset::.
+
+code::
+(
+x = {
+  var rate = MouseX.kr(-2, 2);
+  var trig = MouseButton.kr(0, 1, 0);
+  var phase = SuperPhasor.ar(trig, rate, 0, 480000, 0, 1);
+  rate.poll(label: "rate");
+  phase.poll(label: "phase");
+  0
+}.play
+)
+::
+
+subsection::SuperBufRd
+
+code::
+SuperBufRd.ar(numChannels: 1, bufnum: 0, phase: 0, loop: 1, quality: 2)
+::
+
+link::Classes/SuperBufRd:: works much like link::Classes/BufRd::, using a SuperPair phase input to index into a buffer. It can hook up with SuperPhasor just like you would use a Phasor into BufRd:
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+(
+x = {
+  var rate = MouseX.kr(-2, 2);
+  var phase = SuperPhasor.ar(0, rate, 0, SuperBufFrames.kr(b));
+  SuperBufRd.ar(1, b, phase)!2;
+}.play
+)
+::
+
+Notice also the use of link::Classes/SuperBufFrames::, which is analogous to link::Classes/BufFrames:: but gives a SuperPair output.
+
+
+subsection::SuperPlayBuf
+
+code::
+SuperPlayBuf.ar(numChannels: 1, bufnum: 0, rate: 1, trig: 0, reset: 0, start: 0, end, loop: 1, quality: 2)
+::
+
+link::Classes/SuperPlayBuf:: is a pseudo-UGen wrapper around SuperPhasor and SuperBufRd UGens. Behaves pretty much like link::Classes/PlayBuf:: with the added benefits that you can set a strong::start:: and strong::end:: of a playback range in seconds; strong::rate:: is relative to buffer's sample rate; you can cue long sound buffers with subsample accuracy; and you can specify what interpolation strong::quality:: you want. Another difference from PlayBuf is that playback starts at strong::reset:: rather than start.
+
+
+subsection::Crossfading UGens
+See the helpfiles for more information:
+list::
+## link::Classes/SuperPhasorX::
+## link::Classes/SuperPlayBufX::
+## link::Classes/SuperPlayBufCF::
+::
